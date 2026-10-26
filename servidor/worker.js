@@ -32,6 +32,16 @@ export default {
       const eb = await ebClient(env);
       if (url.pathname === '/ping') return json({ ok: true });
 
+      if (url.pathname === '/quotes' && req.method === 'POST') {
+        const b = await req.json();
+        const isins = [...new Set((b.isins || []).map(String))].slice(0, 40);
+        const quotes = {};
+        await Promise.all(isins.map(async (isin) => {
+          try { quotes[isin] = await quoteFor(isin); } catch (e) { quotes[isin] = { error: e.message }; }
+        }));
+        return json({ quotes });
+      }
+
       if (url.pathname === '/aspsps' && req.method === 'GET') {
         const country = url.searchParams.get('country') || 'ES';
         return json(await eb('GET', '/aspsps?country=' + encodeURIComponent(country)));
@@ -88,6 +98,37 @@ export default {
     }
   },
 };
+
+// Prices for an ISIN from Yahoo Finance, converted to euros. Listings on euro exchanges are preferred.
+const EUR_EXCHANGES = ['AMS', 'GER', 'FRA', 'MIL', 'PAR', 'MCE', 'BRU', 'VIE', 'LIS', 'DUB', 'HEL', 'EBS', 'STU', 'MUN', 'DUS', 'BER', 'HAM', 'XETRA'];
+const YH = { 'User-Agent': 'Mozilla/5.0 (compatible; cuaderno-gastos)' };
+async function yjson(u) {
+  const r = await fetch(u, { headers: YH });
+  if (!r.ok) throw new Error('Yahoo ' + r.status);
+  return r.json();
+}
+async function lastPrice(symbol) {
+  const d = await yjson('https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(symbol) + '?range=5d&interval=1d');
+  const m = d && d.chart && d.chart.result && d.chart.result[0] && d.chart.result[0].meta;
+  if (!m || m.regularMarketPrice == null) throw new Error('Sin precio');
+  return { price: m.regularMarketPrice, currency: m.currency || 'EUR', time: m.regularMarketTime ? new Date(m.regularMarketTime * 1000).toISOString() : null };
+}
+async function quoteFor(isin) {
+  const s = await yjson('https://query2.finance.yahoo.com/v1/finance/search?quotesCount=10&newsCount=0&q=' + encodeURIComponent(isin));
+  const list = (s.quotes || []).filter((q) => q.symbol);
+  if (!list.length) throw new Error('ISIN no encontrado');
+  list.sort((a, b) => (EUR_EXCHANGES.includes(b.exchange) ? 1 : 0) - (EUR_EXCHANGES.includes(a.exchange) ? 1 : 0));
+  let q = null, sym = null;
+  for (const c of list.slice(0, 4)) {
+    try { q = await lastPrice(c.symbol); sym = c; break; } catch (e) {}
+  }
+  if (!q) throw new Error('Sin precio');
+  let price = q.price, cur = q.currency;
+  if (cur === 'GBp' || cur === 'GBX') { price = price / 100; cur = 'GBP'; }
+  let priceEur = price;
+  if (cur !== 'EUR') priceEur = price * (await lastPrice(cur + 'EUR=X')).price;
+  return { symbol: sym.symbol, name: sym.longname || sym.shortname || '', price, currency: cur, priceEur: Math.round(priceEur * 10000) / 10000, time: q.time };
+}
 
 async function ebClient(env) {
   const token = await makeJwt(env.EB_APP_ID, env.EB_PRIVATE_KEY);

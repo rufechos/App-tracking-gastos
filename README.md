@@ -10,6 +10,10 @@ Los extractos se leen en el navegador y los datos se guardan solo en el disposit
 2. Pulsa Compartir.
 3. Elige «Añadir a pantalla de inicio».
 
+## Inversiones
+
+La sección «Inversiones» sigue tu cartera de Renta 4, Trade Republic u otros brókers: añade las posiciones a mano o importa el informe de posiciones (Excel, CSV o PDF). El dinero que envías a los brókers va a la categoría «Inversión» y no cuenta como gasto.
+
 ## Conectar tus bancos
 
 Para que los movimientos lleguen solos, sigue la guía [SINCRONIZAR.md](SINCRONIZAR.md).

@@ -109,7 +109,7 @@ td.r,th.r{text-align:right;white-space:nowrap}
 
 .tools{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .tools input[type=search]{flex:1 1 200px}
-table.mv{min-width:640px}
+table.mv,table.inv{min-width:640px}
 .mv td.concept{max-width:420px;overflow-wrap:anywhere}
 .mv select{max-width:210px;font-size:13.5px}
 .mv .src{font-size:11.5px;color:var(--muted)}
@@ -118,7 +118,7 @@ table.mv{min-width:640px}
 .learn input{flex:0 1 220px}
 .more{margin-top:12px;display:flex;justify-content:center}
 
-.cats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.cats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
 .cat-list{list-style:none;padding:0;margin:8px 0 0;display:flex;flex-direction:column;gap:4px;font-size:13.5px}
 .cat-list li{display:flex;justify-content:space-between;gap:8px;align-items:center}
 .x{border:none;background:none;color:var(--muted);cursor:pointer;padding:0 4px;font-size:15px}
@@ -133,6 +133,11 @@ details summary{cursor:pointer;font-weight:500;margin-top:10px}
 .conn{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13.5px}
 .conn strong{font-weight:600}
 .btn.sm{padding:3px 9px;font-size:13px}
+.inv-forms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.inv-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.inv-row input{width:100%}
+.inv-name small{display:block;color:var(--muted);font-family:var(--f-mono);font-size:11.5px}
+@media (max-width:700px){.inv-forms,.inv-row{grid-template-columns:minmax(0,1fr)}}
 .privacy{font-size:13px;color:var(--muted);max-width:70ch}
 .empty{color:var(--muted);font-size:14px;padding:20px 0;text-align:center}
 
@@ -239,6 +244,43 @@ details summary{cursor:pointer;font-weight:500;margin-top:10px}
     <div class="chart-box"><canvas id="cShare" aria-label="Porcentaje de gasto por categoría cada mes"></canvas></div>
   </section>
 
+  <section class="panel" id="invPanel">
+    <div class="panel-head">
+      <h2>Inversiones</h2>
+      <div class="tools"><span class="muted" id="invQuoteInfo" style="font-size:13px"></span><button class="btn" type="button" id="invQuoteBtn">Actualizar precios</button></div>
+    </div>
+    <div class="notice" id="invSample" hidden style="margin-bottom:12px"><span><strong>Cartera de ejemplo.</strong> Se borra al añadir o importar tu primera posición.</span></div>
+    <div class="kpis" id="invKpis"></div>
+    <div class="chart-box" id="invChartBox" style="margin-top:16px;height:220px" hidden><canvas id="cInv" aria-label="Evolución del valor de la cartera"></canvas></div>
+    <div class="table-scroll" style="margin-top:14px"><table id="invTable"></table></div>
+    <div class="files" id="invStatus" style="margin-top:8px"></div>
+    <details id="invSetup">
+      <summary>Añadir o importar posiciones</summary>
+      <div class="inv-forms">
+        <form class="bank-form" id="invForm">
+          <h3>Añadir o editar a mano</h3>
+          <input type="hidden" id="invId">
+          <label for="invBroker">Bróker</label><input type="text" id="invBroker" list="brokers" required>
+          <label for="invName">Nombre</label><input type="text" id="invName" required placeholder="p. ej. iShares Core MSCI World">
+          <label for="invIsin">ISIN (para actualizar el precio solo)</label><input type="text" id="invIsin" placeholder="IE00B4L5Y983" autocapitalize="characters" spellcheck="false">
+          <div class="inv-row">
+            <div><label for="invQty">Títulos</label><input type="text" id="invQty" inputmode="decimal" required></div>
+            <div><label for="invCost">Total invertido (€)</label><input type="text" id="invCost" inputmode="decimal" required></div>
+            <div><label for="invPrice">Precio actual (€)</label><input type="text" id="invPrice" inputmode="decimal" placeholder="opcional"></div>
+          </div>
+          <div class="tools"><button class="btn primary" type="submit" id="invSubmit">Guardar posición</button><button class="btn" type="button" id="invCancel" hidden>Cancelar</button></div>
+        </form>
+        <div class="bank-form">
+          <h3>Importar informe del bróker</h3>
+          <p class="muted" style="font-size:13px">Sube el informe de posiciones (Excel, CSV o PDF) que descargas de Renta 4 o Trade Republic. Sustituye las posiciones que ya tenías de ese bróker.</p>
+          <label for="invImpBroker">Bróker</label><input type="text" id="invImpBroker" list="brokers" value="Renta 4">
+          <input type="file" id="invFile" accept=".csv,.txt,.xlsx,.xls,.ods,.pdf">
+        </div>
+      </div>
+      <datalist id="brokers"><option value="Renta 4"></option><option value="Trade Republic"></option></datalist>
+    </details>
+  </section>
+
   <section class="panel">
     <div class="panel-head"><h2>Movimientos</h2><span class="muted" id="mvCount" style="font-size:13px"></span></div>
     <div class="tools">
@@ -254,7 +296,7 @@ details summary{cursor:pointer;font-weight:500;margin-top:10px}
     <div class="cats" id="cats"></div>
     <form class="addcat" id="addCat">
       <input type="text" id="newCatName" placeholder="Nueva categoría (p. ej. Mascotas)" aria-label="Nombre de la nueva categoría" required>
-      <select id="newCatKind" aria-label="Tipo de categoría"><option value="gasto">Gasto</option><option value="ingreso">Ingreso</option><option value="excluir">No contar</option></select>
+      <select id="newCatKind" aria-label="Tipo de categoría"><option value="gasto">Gasto</option><option value="ingreso">Ingreso</option><option value="inversion">Inversión</option><option value="excluir">No contar</option></select>
       <button class="btn" type="submit">Añadir categoría</button>
     </form>
     <div class="rules">
@@ -300,9 +342,11 @@ const DEFAULT_CATS=[
   {id:'intereses',name:'Intereses y rendimientos',kind:'ingreso',kw:['intereses','interes','dividendo','dividendos','rendimiento','remuneracion']},
   {id:'transf_rec',name:'Bizum y transferencias recibidas',kind:'ingreso',kw:['bizum','transferencia','transf','trf','abono']},
   {id:'otros_i',name:'Otros ingresos',kind:'ingreso',kw:[]},
+  {id:'inversion',name:'Inversión',kind:'inversion',kw:['trade republic','traderepublic','renta 4','renta4','r4','indexa','myinvestor','degiro','interactive brokers','scalable capital','etoro','finizens','inbestme','broker','fondo de inversion','suscripcion fondo','reembolso fondo','plan de pensiones','plan pensiones']},
   {id:'excluir',name:'Traspasos entre mis cuentas',kind:'excluir',kw:['traspaso','traspasos','entre cuentas','cuenta ahorro','liquidacion tarjeta','pago tarjeta credito','cargo tarjeta credito']}
 ];
-const KIND_LABEL={gasto:'Gastos',ingreso:'Ingresos',excluir:'No cuentan'};
+const KIND_LABEL={gasto:'Gastos',ingreso:'Ingresos',inversion:'Inversión',excluir:'No cuentan'};
+const KINDS=['gasto','ingreso','inversion','excluir'];
 const STOP=new Set(['compra','compras','tarj','tarjeta','pago','pagos','en','de','del','la','el','los','las','a','al','recibo','adeudo','cargo','transferencia','transf','trf','bizum','favor','con','num','n','card','purchase','apple','pay','contactless','visa','mastercard','debito','credito','fecha','operacion','op','com','es','www','sl','sa','s','l','y','por','internet','movil','enviada','recibida','emitida','domiciliacion','domiciliado','cta','cuenta','ref','referencia','concepto','abono']);
 
 function norm(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim()}
@@ -310,12 +354,16 @@ function wordMatch(n,kw){return kw && (' '+n+' ').indexOf(' '+kw+' ')>=0}
 function suggestKw(concept){const w=norm(concept).split(' ').filter(x=>x.length>1&&!STOP.has(x)&&!/\d/.test(x));return w.slice(0,2).join(' ')||norm(concept).split(' ').slice(0,3).join(' ')}
 
 /* ---------- state ---------- */
-let state={tx:[],cats:[],rules:[],sample:true,files:[]};
+let state={tx:[],cats:[],rules:[],sample:true,files:[],inv:{positions:[],history:[],lastQuote:null}};
 const defaultCatsLite=()=>DEFAULT_CATS.map(c=>({id:c.id,name:c.name,kind:c.kind}));
 function save(){try{localStorage.setItem(LS,JSON.stringify(state))}catch(e){}}
 function load(){
   try{const raw=localStorage.getItem(LS);if(raw){const s=JSON.parse(raw);if(s&&Array.isArray(s.tx)){state=Object.assign({tx:[],cats:[],rules:[],sample:false,files:[]},s);
-    DEFAULT_CATS.forEach(d=>{if(!state.cats.find(c=>c.id===d.id))state.cats.push({id:d.id,name:d.name,kind:d.kind})});return true}}}catch(e){}
+    const hadInv=state.cats.some(c=>c.id==='inversion');
+    DEFAULT_CATS.forEach(d=>{if(!state.cats.find(c=>c.id===d.id))state.cats.push({id:d.id,name:d.name,kind:d.kind})});
+    if(!hadInv){const kw=kwOf('inversion');state.tx.forEach(t=>{if(['transf_env','transf_rec','otros_g','otros_i'].includes(t.cat)&&kw.some(k=>wordMatch(norm(t.concept),k)))t.cat='inversion'})}
+    if(!state.inv)state.inv={positions:[],history:[],lastQuote:null};
+    return true}}}catch(e){}
   return false;
 }
 const catById=id=>state.cats.find(c=>c.id===id)||state.cats.find(c=>c.id==='otros_g');
@@ -325,7 +373,7 @@ function categorize(concept,amount){
   const n=norm(concept);
   for(let i=state.rules.length-1;i>=0;i--){const r=state.rules[i];if(wordMatch(n,r.kw)&&state.cats.find(c=>c.id===r.cat))return r.cat}
   const sign=amount<0?'gasto':'ingreso';
-  const order=['excluir'].concat(DEFAULT_CATS.filter(c=>c.kind===sign).map(c=>c.id));
+  const order=['inversion','excluir'].concat(DEFAULT_CATS.filter(c=>c.kind===sign).map(c=>c.id));
   for(const id of order){if(kwOf(id).some(k=>wordMatch(n,k)))return id}
   return sign==='gasto'?'otros_g':'otros_i';
 }
@@ -538,6 +586,7 @@ function sampleTx(){
     add(m+'-25','COMPRA TARJ. 4512 RESTAURANTE LA PEPICA',-[46,0,58][i]||-31);
     add(m+'-27','COMPRA TARJ. 4512 ZARA VALENCIA',-[59.95,0,79.9][i]||-25.99);
     add(m+'-28','BIZUM ENVIADO A PABLO R. REGALO',-[15,25,10][i]);
+    add(m+'-02','TRANSFERENCIA A TRADE REPUBLIC BANK',-300);
   });
   add('2026-08-03','COMPRA TARJ. 4512 RYANAIR',-148.6);
   add('2026-08-04','COMPRA TARJ. 4512 BOOKING.COM HOTEL',-312.4);
@@ -559,12 +608,12 @@ const mLabel=m=>MES[+m.slice(5,7)-1]+' '+m.slice(2,4);
 const mLong=m=>MESL[+m.slice(5,7)-1]+' '+m.slice(0,4);
 function months(){return [...new Set(state.tx.map(t=>t.date.slice(0,7)))].sort()}
 function agg(list){
-  const e={},inc={};let te=0,ti=0;
+  const e={},inc={};let te=0,ti=0,tinv=0;
   list.forEach(t=>{const c=catById(t.cat);if(!c)return;
-    if(c.kind==='gasto'){e[c.id]=(e[c.id]||0)-t.amount}else if(c.kind==='ingreso'){inc[c.id]=(inc[c.id]||0)+t.amount}});
+    if(c.kind==='gasto'){e[c.id]=(e[c.id]||0)-t.amount}else if(c.kind==='ingreso'){inc[c.id]=(inc[c.id]||0)+t.amount}else if(c.kind==='inversion'){tinv-=t.amount}});
   Object.keys(e).forEach(k=>{if(e[k]<=0.004)delete e[k];else te+=e[k]});
   Object.keys(inc).forEach(k=>{if(inc[k]<=0.004)delete inc[k];else ti+=inc[k]});
-  return {e,inc,te,ti};
+  return {e,inc,te,ti,tinv};
 }
 function colorMap(){ // fixed by overall expense ranking, so colors never change with the period filter
   const a=agg(state.tx);const top=Object.entries(a.e).sort((x,y)=>y[1]-x[1]).slice(0,7).map(x=>x[0]);
@@ -592,6 +641,7 @@ function render(){
   renderShare(ms,cmap);
   renderMoves(list);
   renderCats();
+  if(state.inv)renderInv();
 }
 function renderFiles(){
   $('files').innerHTML=state.files.map(f=>`<div class="file-row"><span>${esc(f.name)}</span>${f.error?`<span class="err">${esc(f.error)}</span>`:`<span class="ok">${f.added} movimientos añadidos</span>${f.dup?`<span class="muted">${f.dup} repetidos ignorados</span>`:''}${f.flipped?'<span class="muted">Todos los importes venían en positivo: se han tomado como gastos</span>':''}`}</div>`).join('');
@@ -603,7 +653,7 @@ function renderKpis(a,ms){
   $('kpis').innerHTML=`
    <div class="kpi"><span class="eyebrow">Ingresos</span><span class="v">${fmt.format(a.ti)}</span><span class="d">${period==='all'?'Media '+fmt0.format(a.ti/nMonths)+' al mes':lab}</span></div>
    <div class="kpi"><span class="eyebrow">Gastos</span><span class="v">${fmt.format(a.te)}</span><span class="d">${period==='all'?'Media '+fmt0.format(a.te/nMonths)+' al mes':lab}</span></div>
-   <div class="kpi"><span class="eyebrow">Ahorro</span><span class="v ${bal>=0?'pos':'neg'}">${bal>=0?'+':'−'}${fmt.format(Math.abs(bal))}</span><span class="d">${bal>=0?'Ingresas más de lo que gastas':'Gastas más de lo que ingresas'}</span></div>
+   <div class="kpi"><span class="eyebrow">Ahorro</span><span class="v ${bal>=0?'pos':'neg'}">${bal>=0?'+':'−'}${fmt.format(Math.abs(bal))}</span><span class="d">${Math.abs(a.tinv)>=0.5?(a.tinv>0?'De ello, '+fmt0.format(a.tinv)+' invertidos':'Has sacado '+fmt0.format(-a.tinv)+' de inversiones'):(bal>=0?'Ingresas más de lo que gastas':'Gastas más de lo que ingresas')}</span></div>
    <div class="kpi"><span class="eyebrow">Tasa de ahorro</span><span class="v ${rate>=0?'pos':'neg'}">${pct(rate)}</span><span class="d">Del total ingresado</span></div>`;
 }
 function baseOpts(){
@@ -657,7 +707,7 @@ function renderShare(ms,cmap){
       scales:{x:{stacked:true,grid:{display:false},border:{color:o.line}},y:{stacked:true,min:0,max:100,grid:{color:o.line},border:{display:false},ticks:{stepSize:25,callback:v=>v+' %'}}}}});
 }
 function catOptions(sel){
-  return ['gasto','ingreso','excluir'].map(k=>`<optgroup label="${KIND_LABEL[k]}">`+state.cats.filter(c=>c.kind===k).map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${esc(c.name)}</option>`).join('')+'</optgroup>').join('');
+  return KINDS.map(k=>`<optgroup label="${KIND_LABEL[k]}">`+state.cats.filter(c=>c.kind===k).map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${esc(c.name)}</option>`).join('')+'</optgroup>').join('');
 }
 function renderMoves(list){
   const q=norm($('q').value);const fc=$('fCat').value;
@@ -685,7 +735,7 @@ function renderMoves(list){
 function countMatches(kw,exceptId){const k=norm(kw);if(!k)return 0;return state.tx.filter(t=>t.id!==exceptId&&wordMatch(norm(t.concept),k)).length}
 function renderCats(){
   const counts={};state.tx.forEach(t=>counts[t.cat]=(counts[t.cat]||0)+1);
-  $('cats').innerHTML=['gasto','ingreso','excluir'].map(k=>`<div><h3>${KIND_LABEL[k]}</h3><ul class="cat-list">`+state.cats.filter(c=>c.kind===k).map(c=>`<li><span>${esc(c.name)} <span class="muted num">(${counts[c.id]||0})</span></span>${c.custom?`<button class="x" type="button" data-delcat="${c.id}" aria-label="Eliminar ${esc(c.name)}">×</button>`:''}</li>`).join('')+'</ul></div>').join('');
+  $('cats').innerHTML=KINDS.map(k=>`<div><h3>${KIND_LABEL[k]}</h3><ul class="cat-list">`+state.cats.filter(c=>c.kind===k).map(c=>`<li><span>${esc(c.name)} <span class="muted num">(${counts[c.id]||0})</span></span>${c.custom?`<button class="x" type="button" data-delcat="${c.id}" aria-label="Eliminar ${esc(c.name)}">×</button>`:''}</li>`).join('')+'</ul></div>').join('');
   $('rules').innerHTML=state.rules.length?state.rules.map((r,i)=>`<li><span>«${esc(r.kw)}» → ${esc((catById(r.cat)||{}).name||'?')}</span><button class="x" type="button" data-delrule="${i}" aria-label="Eliminar regla">×</button></li>`).join(''):'<li class="muted">Todavía no hay reglas. Cambia la categoría de un movimiento para crear una.</li>';
 }
 
@@ -735,13 +785,188 @@ $('cats').addEventListener('click',e=>{const b=e.target.closest('[data-delcat]')
 $('rules').addEventListener('click',e=>{const b=e.target.closest('[data-delrule]');if(!b)return;state.rules.splice(+b.dataset.delrule,1);save();render()});
 $('resetBox').addEventListener('click',e=>{
   if(e.target.id==='resetBtn'){$('resetBox').innerHTML='<span>Se borrarán todos los movimientos y reglas.</span><button class="btn danger" type="button" id="resetYes">Sí, borrar</button><button class="btn" type="button" id="resetNo">Cancelar</button>'}
-  else if(e.target.id==='resetYes'){state={tx:[],cats:defaultCatsLite(),rules:[],sample:false,files:[]};period='all';pending=null;save();resetBtn();render()}
+  else if(e.target.id==='resetYes'){state={tx:[],cats:defaultCatsLite(),rules:[],sample:false,files:[],inv:{positions:[],history:[],lastQuote:null}};period='all';pending=null;save();resetBtn();render()}
   else if(e.target.id==='resetNo'){resetBtn()}
 });
 function resetBtn(){$('resetBox').innerHTML='<button class="btn danger" id="resetBtn" type="button">Borrar todos los datos</button>'}
 // redraw charts when the theme changes
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render())}catch(e){}
 new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+/* ---------- investments ---------- */
+const ISIN_RE=/\b([A-Z]{2}[A-Z0-9]{9}\d)\b/;
+function sampleInv(){
+  return {sample:true,lastQuote:null,positions:[
+    {id:uid(),broker:'Trade Republic',name:'iShares Core MSCI World (ejemplo)',isin:'IE00B4L5Y983',qty:42,cost:3600,price:101.2,priceDate:'2026-10-24'},
+    {id:uid(),broker:'Renta 4',name:'Fondo indexado S&P 500 (ejemplo)',isin:'',qty:120.5,cost:2400,price:23.1,priceDate:'2026-10-24'}],
+    history:[{d:'2026-07-31',v:5420,c:5400},{d:'2026-08-31',v:5610,c:5700},{d:'2026-09-30',v:6390,c:6000},{d:'2026-10-24',v:7034,c:6000}]};
+}
+const posValue=p=>p.price!=null&&isFinite(p.price)?p.qty*p.price:null;
+function invTotals(){
+  let v=0,c=0,known=true;
+  state.inv.positions.forEach(p=>{const pv=posValue(p);c+=p.cost||0;if(pv==null){known=false;v+=p.cost||0}else v+=pv});
+  return {v,c,g:v-c,known};
+}
+function snapshot(){
+  if(!state.inv.positions.length)return;
+  const t=invTotals();const d=new Date().toISOString().slice(0,10);
+  state.inv.history=(state.inv.history||[]).filter(h=>h.d!==d);state.inv.history.push({d,v:Math.round(t.v*100)/100,c:Math.round(t.c*100)/100});
+  state.inv.history.sort((a,b)=>a.d.localeCompare(b.d));
+}
+function leaveInvSample(){if(state.inv.sample)state.inv={positions:[],history:[],lastQuote:null}}
+function renderInv(){
+  const inv=state.inv;$('invSample').hidden=!inv.sample;
+  const t=invTotals();const ps=inv.positions;
+  const netContrib=agg(state.tx).tinv;
+  const gp=t.c>0?t.g/t.c*100:0;
+  $('invKpis').innerHTML=`
+   <div class="kpi"><span class="eyebrow">Valor de la cartera</span><span class="v">${fmt.format(t.v)}</span><span class="d">${ps.length} ${ps.length===1?'posición':'posiciones'}${t.known?'':' · alguna sin precio'}</span></div>
+   <div class="kpi"><span class="eyebrow">Invertido</span><span class="v">${fmt.format(t.c)}</span><span class="d">Coste de las posiciones</span></div>
+   <div class="kpi"><span class="eyebrow">Ganancia</span><span class="v ${t.g>=0?'pos':'neg'}">${t.g>=0?'+':'−'}${fmt.format(Math.abs(t.g))}</span><span class="d ${t.g>=0?'pos':'neg'}">${t.g>=0?'+':'−'}${pct(Math.abs(gp))}</span></div>
+   <div class="kpi"><span class="eyebrow">Aportado desde tus cuentas</span><span class="v">${fmt.format(netContrib)}</span><span class="d">Movimientos en la categoría Inversión</span></div>`;
+  const rows=ps.slice().sort((a,b)=>(posValue(b)??b.cost)-(posValue(a)??a.cost));
+  $('invTable').className='inv';
+  $('invTable').innerHTML=rows.length?`<thead><tr><th>Posición</th><th>Bróker</th><th class="r">Títulos</th><th class="r">Invertido</th><th class="r">Precio</th><th class="r">Valor</th><th class="r">Ganancia</th><th class="r">% cartera</th><th></th></tr></thead><tbody>`+rows.map(p=>{
+    const pv=posValue(p),g=pv==null?null:pv-p.cost;
+    return `<tr><td class="inv-name">${esc(p.name)}${p.isin?`<small>${esc(p.isin)}</small>`:''}</td><td>${esc(p.broker)}</td><td class="r num">${p.qty.toLocaleString('es-ES',{maximumFractionDigits:4})}</td><td class="r num">${fmt.format(p.cost)}</td><td class="r num">${p.price!=null?fmt.format(p.price):'—'}${p.priceDate?`<div class="src">${fmtD(p.priceDate)}</div>`:''}</td><td class="r num">${pv!=null?fmt.format(pv):'—'}</td><td class="r num ${g==null?'':g>=0?'pos':'neg'}">${g==null?'—':(g>=0?'+':'−')+fmt.format(Math.abs(g))+`<div class="src">${p.cost?(g>=0?'+':'−')+pct(Math.abs(g/p.cost*100)):''}</div>`}</td><td class="r num">${t.v?pct((pv??p.cost)/t.v*100):''}</td><td style="white-space:nowrap"><button class="btn sm" type="button" data-editpos="${p.id}">Editar</button><button class="x" type="button" data-delpos="${p.id}" aria-label="Quitar ${esc(p.name)}">×</button></td></tr>`}).join('')+'</tbody>':'<tbody><tr><td class="empty">Todavía no hay posiciones. Añádelas a mano o importa el informe de tu bróker en «Añadir o importar posiciones».</td></tr></tbody>';
+  $('invQuoteInfo').textContent=inv.lastQuote?'Precios del '+fmtDT(inv.lastQuote):'';
+  $('invQuoteBtn').hidden=!ps.some(p=>p.isin);
+  if(!ps.length)$('invSetup').open=true;
+  renderInvChart();
+}
+function renderInvChart(){
+  kill('inv');const h=state.inv.history||[];$('invChartBox').hidden=h.length<2;
+  if(h.length<2||!window.Chart)return;const o=baseOpts();
+  charts.inv=new Chart($('cInv'),{type:'line',data:{labels:h.map(x=>fmtD(x.d)),datasets:[
+    {label:'Valor',data:h.map(x=>x.v),borderColor:cssVar('--s1'),backgroundColor:cssVar('--s1')+'22',fill:true,borderWidth:2,pointRadius:h.map((_,i)=>i===h.length-1?4:0),tension:.25},
+    {label:'Invertido',data:h.map(x=>x.c),borderColor:cssVar('--rest'),borderDash:[5,4],borderWidth:2,pointRadius:0,fill:false,stepped:true}]},
+    options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{boxWidth:10,boxHeight:10,useBorderRadius:true,borderRadius:3}},tooltip:Object.assign({},o.tooltip,{callbacks:{label:c=>' '+c.dataset.label+': '+fmt.format(c.parsed.y)}})},
+      scales:{x:{grid:{display:false},border:{color:o.line},ticks:{maxTicksLimit:6}},y:{grid:{color:o.line},border:{display:false},ticks:{callback:v=>fmt0.format(v)}}}}});
+}
+// positions report: spreadsheet rows
+function rowsToPositions(rows){
+  rows=rows.filter(r=>Array.isArray(r)&&r.some(c=>String(c??'').trim()!==''));
+  for(let i=0;i<Math.min(rows.length,60);i++){
+    const h=rows[i].map(c=>norm(c));
+    const f=(re,ex)=>h.findIndex(x=>x&&re.test(x)&&!(ex&&ex.test(x)));
+    const qi=f(/titulos|cantidad|participaciones|acciones|unidades|shares|quantity|nominal/);
+    const ni=f(/nombre|producto|instrumento|descripcion|activo|security|denominacion|^valor$|^fondo|^titulo$|name/,/isin|valoracion|cotizacion/);
+    const ii=f(/isin/);
+    if(qi<0||(ni<0&&ii<0))continue;
+    const pmi=f(/precio medio|pm compra|coste medio|precio de compra|avg|average/);
+    const ci=f(/coste|costo|importe invertido|invertido|cost/,/medio|unit/);
+    const pi=f(/cotizacion|precio actual|ultimo|valor liquidativo|^precio$|price|last/,/medio|compra/);
+    const vi=f(/valoracion|valor de mercado|valor actual|importe actual|market value|valor efectivo|^valor total|^importe$/);
+    const out=[];
+    for(const r of rows.slice(i+1)){
+      const qty=parseNum(r[qi]);if(qty==null||qty===0)continue;
+      let isin=ii>=0?String(r[ii]||'').trim().toUpperCase():'';if(!ISIN_RE.test(isin)){const m=r.join(' ').match(ISIN_RE);isin=m?m[1]:''}
+      const name=String((ni>=0?r[ni]:'')||isin).trim();if(!name)continue;
+      let cost=ci>=0?parseNum(r[ci]):null;if(cost==null&&pmi>=0){const pm=parseNum(r[pmi]);if(pm!=null)cost=pm*qty}
+      let price=pi>=0?parseNum(r[pi]):null;const val=vi>=0?parseNum(r[vi]):null;
+      if(price==null&&val!=null)price=val/qty;
+      out.push({name,isin,qty:Math.abs(qty),cost:Math.round((cost!=null?Math.abs(cost):(val!=null?Math.abs(val):0))*100)/100,price:price!=null?Math.abs(price):null,costGuess:cost==null});
+    }
+    if(out.length)return out;
+  }
+  throw new Error('No encuentro columnas de títulos y nombre o ISIN en el archivo.');
+}
+// positions report: PDF text, one position per ISIN
+async function pdfLines(buf){
+  const pdf=await pdfjsLib.getDocument({data:buf,isEvalSupported:false}).promise;const lines=[];
+  for(let p=1;p<=pdf.numPages;p++){const tc=await(await pdf.getPage(p)).getTextContent();const rows=[];
+    tc.items.forEach(it=>{if(!it.str||!it.str.trim())return;const y=it.transform[5];let r=rows.find(r=>Math.abs(r.y-y)<2.5);if(!r){r={y,items:[]};rows.push(r)}r.items.push({x:it.transform[4],s:it.str})});
+    rows.sort((a,b)=>b.y-a.y).forEach(r=>lines.push(r.items.sort((a,b)=>a.x-b.x).map(i=>i.s).join(' ').replace(/\s+/g,' ').trim()));}
+  return lines;
+}
+async function parsePositionsPDF(buf){
+  const lines=await pdfLines(buf);const out=[];const NUM=/-?\d{1,3}(?:\.\d{3})*,\d+|-?\d+,\d+|\b\d+\b/g;
+  lines.forEach((l,i)=>{
+    const m=l.match(ISIN_RE);if(!m)return;
+    const own=l.replace(m[1],' ').replace(/ISIN:?/i,' ');
+    const hasNums=t=>((t||'').match(NUM)||[]).length>=2;
+    // the figures sit on the ISIN line, or on the line just above it (name line), as in Trade Republic statements
+    const src=hasNums(own)?own:hasNums(lines[i-1])?lines[i-1]:(lines[i+1]||'');
+    const block=src.replace(/ISIN:?/i,' ');
+    const nums=(block.replace(m[1],' ').replace(/\b\d{1,2}[\/.]\d{1,2}[\/.]\d{2,4}\b/g,' ').match(NUM)||[]).map(parseNum).filter(n=>n!=null&&n>0);
+    if(nums.length<2)return;
+    const qty=nums[0],value=nums[nums.length-1];
+    const clean=t=>(t||'').replace(m[1],' ').replace(/ISIN:?/i,' ').replace(NUM,' ').replace(/\b(Stk|uds|titulos|títulos|participaciones|acciones)\b\.?/gi,' ').replace(/[€%]/g,' ').replace(/\s+/g,' ').trim();
+    const name=clean(own)||clean(src)||m[1];
+    out.push({name:name.slice(0,80),isin:m[1],qty,cost:value,price:value/qty,costGuess:true});
+  });
+  if(!out.length)throw new Error('No he encontrado posiciones con ISIN en el PDF.');
+  return out;
+}
+async function importPositions(file,broker){
+  const buf=await file.arrayBuffer();const ext=(file.name.split('.').pop()||'').toLowerCase();
+  let rows;
+  if(ext==='pdf')rows=await parsePositionsPDF(buf);
+  else if(ext==='csv'||ext==='txt')rows=rowsToPositions(parseCSV(decodeText(buf)));
+  else{const wb=XLSX.read(buf,{type:'array',cellDates:true});let err;for(const n of wb.SheetNames){try{rows=rowsToPositions(XLSX.utils.sheet_to_json(wb.Sheets[n],{header:1,raw:true,defval:''}));break}catch(e){err=e}}if(!rows)throw err}
+  leaveInvSample();
+  const old=state.inv.positions.filter(p=>p.broker===broker);
+  state.inv.positions=state.inv.positions.filter(p=>p.broker!==broker);
+  const today=new Date().toISOString().slice(0,10);
+  rows.forEach(r=>{
+    const prev=old.find(o=>(r.isin&&o.isin===r.isin)||norm(o.name)===norm(r.name));
+    // a report without cost keeps the cost you entered before for that position
+    const cost=r.costGuess&&prev?prev.cost:r.cost;
+    state.inv.positions.push({id:uid(),broker,name:r.name,isin:r.isin,qty:r.qty,cost,price:r.price,priceDate:r.price!=null?today:null});
+  });
+  snapshot();save();
+  return rows;
+}
+async function updateQuotes(prefix=''){
+  const isins=[...new Set(state.inv.positions.map(p=>p.isin).filter(Boolean))];
+  if(!isins.length)return;
+  if(!bank.server||!bank.token){invMsg=prefix+'<span class="muted">Para actualizar precios solos, configura el servidor en «Bancos conectados».</span>';renderInv();renderInvStatus();return}
+  invMsg='<span class="muted">Actualizando precios…</span>';renderInvStatus();
+  try{
+    const q=await api('/quotes',{isins});let n=0;const miss=[];
+    state.inv.positions.forEach(p=>{const r=p.isin&&q.quotes&&q.quotes[p.isin];if(r&&r.priceEur!=null){p.price=r.priceEur;p.priceDate=(r.time||new Date().toISOString()).slice(0,10);n++}else if(p.isin)miss.push(p.name)});
+    state.inv.lastQuote=new Date().toISOString();snapshot();save();
+    invMsg=prefix+`<span class="ok">${n} ${n===1?'precio actualizado':'precios actualizados'}</span>`+(miss.length?`<span class="muted">Sin precio para: ${esc(miss.join(', '))}. Puedes ponerlo a mano con «Editar».</span>`:'');
+  }catch(e){invMsg=prefix+`<span class="err">${esc(e.message)}</span>`}
+  renderInv();renderInvStatus();
+}
+let invMsg='';
+function renderInvStatus(){$('invStatus').innerHTML=invMsg?`<div class="file-row">${invMsg}</div>`:''}
+function fillInvForm(p){
+  $('invId').value=p?p.id:'';$('invBroker').value=p?p.broker:'';$('invName').value=p?p.name:'';$('invIsin').value=p?p.isin||'':'';
+  $('invQty').value=p?String(p.qty).replace('.',','):'';$('invCost').value=p?String(p.cost).replace('.',','):'';$('invPrice').value=p&&p.price!=null?String(p.price).replace('.',','):'';
+  $('invSubmit').textContent=p?'Guardar cambios':'Guardar posición';$('invCancel').hidden=!p;
+}
+$('invForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const qty=parseNum($('invQty').value),cost=parseNum($('invCost').value),price=$('invPrice').value.trim()?parseNum($('invPrice').value):null;
+  if(qty==null||cost==null){invMsg='<span class="err">Revisa los títulos y el total invertido: deben ser números.</span>';renderInvStatus();return}
+  const id=$('invId').value;
+  if(!id)leaveInvSample();
+  const isin=$('invIsin').value.trim().toUpperCase();
+  const data={broker:$('invBroker').value.trim(),name:$('invName').value.trim(),isin:ISIN_RE.test(isin)?isin:'',qty:Math.abs(qty),cost:Math.abs(cost)};
+  if(price!=null){data.price=Math.abs(price);data.priceDate=new Date().toISOString().slice(0,10)}
+  const ex=state.inv.positions.find(p=>p.id===id);
+  if(ex)Object.assign(ex,data);else state.inv.positions.push(Object.assign({id:uid(),price:null,priceDate:null},data));
+  invMsg=isin&&!data.isin?'<span class="err">El ISIN no parece válido; la posición se ha guardado sin él.</span>':'<span class="ok">Posición guardada.</span>';
+  fillInvForm(null);snapshot();save();renderInv();renderInvStatus();
+  if(data.isin&&price==null)updateQuotes();
+});
+$('invCancel').addEventListener('click',()=>fillInvForm(null));
+$('invTable').addEventListener('click',e=>{
+  const ed=e.target.closest('[data-editpos]'),dl=e.target.closest('[data-delpos]');
+  if(ed){fillInvForm(state.inv.positions.find(p=>p.id===ed.dataset.editpos));$('invSetup').open=true;$('invName').focus()}
+  if(dl){state.inv.positions=state.inv.positions.filter(p=>p.id!==dl.dataset.delpos);snapshot();save();renderInv()}
+});
+$('invFile').addEventListener('change',async()=>{
+  const f=$('invFile').files[0];if(!f)return;const broker=$('invImpBroker').value.trim()||'Bróker';
+  try{const rows=await importPositions(f,broker);invMsg=`<span class="ok">${rows.length} posiciones importadas de ${esc(broker)}.</span>`+(rows.some(r=>r.costGuess)?'<span class="muted">El informe no trae lo invertido en alguna posición: revísalo con «Editar».</span>':'');renderInv();renderInvStatus();await updateQuotes(invMsg+'</div><div class="file-row">')}
+  catch(e){invMsg=`<span class="err">${esc(e.message||String(e))}</span>`}
+  $('invFile').value='';renderInvStatus();
+});
+$('invQuoteBtn').addEventListener('click',()=>updateQuotes());
+function maybeAutoQuotes(){const l=state.inv.lastQuote?new Date(state.inv.lastQuote).getTime():0;if(!state.inv.sample&&state.inv.positions.some(p=>p.isin)&&bank.server&&Date.now()-l>6*3600000)updateQuotes()}
 
 /* ---------- bank sync (Enable Banking via the Cloudflare Worker in /servidor) ---------- */
 const LSB='cuaderno-gastos-banco';
@@ -879,14 +1104,14 @@ $('bankStatus').addEventListener('click',async e=>{
   if(r){const c=bank.conns[+r.dataset.reconn];try{if(!aspsps.length)await loadAspsps();const a=aspsps.find(x=>x.name===c.aspsp.name)||c.aspsp;await connectBank(a)}catch(err){bankMsg=`<span class="err">${esc(err.message)}</span>`;renderBank()}}
   if(d){bank.conns.splice(+d.dataset.delconn,1);bankSave();renderBank()}
 });
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeAutoSync()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){maybeAutoSync();maybeAutoQuotes()}});
 
 /* ---------- boot ---------- */
-if(!load()){state={tx:[],cats:defaultCatsLite(),rules:[],sample:true,files:[]};state.tx=sampleTx()}
+if(!load()){state={tx:[],cats:defaultCatsLite(),rules:[],sample:true,files:[],inv:{positions:[],history:[],lastQuote:null}};state.tx=sampleTx();state.inv=sampleInv()}
 render();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>render());
-bankBoot();
-window.__cg={ebToTx,parseNum,parseDate,rowsToTx,parseCSV,categorize,state:()=>state};
+bankBoot().then(maybeAutoQuotes);
+window.__cg={rowsToPositions,ebToTx,parseNum,parseDate,rowsToTx,parseCSV,categorize,state:()=>state};
 })();
 </script>
 

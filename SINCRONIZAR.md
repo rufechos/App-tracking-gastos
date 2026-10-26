@@ -53,6 +53,12 @@ A partir de ahí la app se sincroniza sola al abrirla. El botón **Sincronizar a
 
 Si después de autorizar en el banco la app se abre en Safari en lugar de en la app instalada, verás un **código** en «Ajustes de conexión». Cópialo, abre la app desde la pantalla de inicio y pégalo en el campo del código.
 
+### Precios de tus inversiones
+
+El mismo servidor actualiza los precios de la sección «Inversiones» a partir del ISIN de cada posición (datos de Yahoo Finance, convertidos a euros). No necesita nada más: en cuanto el servidor está configurado, la app actualiza los precios al abrirla si han pasado más de 6 horas. Si un fondo no tiene precio disponible, puedes ponerlo a mano con «Editar».
+
+Si ya habías pegado el código del servidor antes de esta función, vuelve a pegar el contenido actual de `servidor/worker.js` en Cloudflare y pulsa **Deploy**.
+
 ### Renovar la autorización
 
 Por ley, el permiso de lectura caduca cada 90 a 180 días según el banco. Cuando pase, la app te avisará y solo tendrás que pulsar **Volver a autorizar**.
