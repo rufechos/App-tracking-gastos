@@ -125,6 +125,14 @@ table.mv{min-width:640px}
 .x:hover{color:var(--bad)}
 .addcat{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .rules{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.bank-form{display:flex;flex-direction:column;gap:6px;margin-top:12px;max-width:560px}
+.bank-form label{font-size:13px;color:var(--muted);margin-top:6px}
+.bank-form select{flex:1 1 220px}
+.bank-form input[type=text],.bank-form input[type=password]{width:100%}
+details summary{cursor:pointer;font-weight:500;margin-top:10px}
+.conn{display:flex;gap:10px;flex-wrap:wrap;align-items:center;font-size:13.5px}
+.conn strong{font-weight:600}
+.btn.sm{padding:3px 9px;font-size:13px}
 .privacy{font-size:13px;color:var(--muted);max-width:70ch}
 .empty{color:var(--muted);font-size:14px;padding:20px 0;text-align:center}
 
@@ -162,6 +170,30 @@ table.mv{min-width:640px}
       <input id="file" type="file" multiple accept=".csv,.txt,.xlsx,.xls,.ods,.pdf" hidden>
     </label>
     <div class="files" id="files"></div>
+  </section>
+
+  <section class="panel" id="bankPanel">
+    <div class="panel-head">
+      <h2>Bancos conectados</h2>
+      <button class="btn primary" id="syncBtn" type="button" hidden>Sincronizar ahora</button>
+    </div>
+    <div class="files" id="bankStatus"></div>
+    <details id="bankSetup">
+      <summary>Ajustes de conexión</summary>
+      <div class="bank-form">
+        <label for="bkServer">Dirección del servidor</label>
+        <input type="text" id="bkServer" placeholder="https://cuaderno-gastos.tu-usuario.workers.dev" autocomplete="off" autocapitalize="off" spellcheck="false">
+        <label for="bkToken">Clave de acceso</label>
+        <input type="password" id="bkToken" autocomplete="off">
+        <div class="tools"><button class="btn" type="button" id="bkSave">Guardar y buscar bancos</button></div>
+        <div id="bkAdd" hidden>
+          <label for="bkAspsp">Banco que quieres conectar</label>
+          <div class="tools"><select id="bkAspsp"></select><button class="btn primary" type="button" id="bkConnect">Conectar banco</button></div>
+        </div>
+        <label for="bkCode">Si el banco te devolvió a otra ventana, pega aquí el código que te mostró</label>
+        <div class="tools"><input type="text" id="bkCode" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn" type="button" id="bkCodeBtn">Usar código</button></div>
+      </div>
+    </details>
   </section>
 
   <div class="notice" id="sampleNotice" hidden>
@@ -232,7 +264,7 @@ table.mv{min-width:640px}
     </div>
   </section>
 
-  <p class="privacy">Tus extractos se leen dentro de tu navegador y no se envían a ningún sitio. Los movimientos se guardan solo en este navegador para que sigan aquí la próxima vez.</p>
+  <p class="privacy">Tus extractos se leen dentro de tu navegador y no se envían a ningún sitio. Si conectas tus bancos, los movimientos pasan por tu propio servidor de Cloudflare, sin guardarse allí. Todo se guarda solo en este dispositivo.</p>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
@@ -711,11 +743,150 @@ function resetBtn(){$('resetBox').innerHTML='<button class="btn danger" id="rese
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>render())}catch(e){}
 new MutationObserver(()=>render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
+/* ---------- bank sync (Enable Banking via the Cloudflare Worker in /servidor) ---------- */
+const LSB='cuaderno-gastos-banco';
+let bank={server:'',token:'',conns:[],pendingAuth:null},aspsps=[],syncing=false,bankMsg='';
+function bankLoad(){try{const b=JSON.parse(localStorage.getItem(LSB)||'null');if(b)bank=Object.assign(bank,b)}catch(e){}}
+function bankSave(){try{localStorage.setItem(LSB,JSON.stringify(bank))}catch(e){}}
+const redirectUrl=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+async function api(path,body){
+  if(!bank.server||!bank.token)throw new Error('Falta la dirección del servidor o la clave de acceso.');
+  const r=await fetch(bank.server.replace(/\/+$/,'')+path,{method:body?'POST':'GET',headers:Object.assign({Authorization:'Bearer '+bank.token},body?{'Content-Type':'application/json'}:{}),body:body?JSON.stringify(body):undefined});
+  let d={};try{d=await r.json()}catch(e){}
+  if(!r.ok){const e=new Error(d.error||('Error '+r.status+' del servidor'));e.status=r.status;throw e}
+  return d;
+}
+const fmtD=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})};
+const fmtDT=iso=>{const d=new Date(iso);return isNaN(d)?'':d.toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})};
+const expired=c=>c.valid_until&&new Date(c.valid_until)<new Date();
+function renderBank(){
+  $('bkServer').value=bank.server;$('bkToken').value=bank.token;
+  const has=bank.conns.length>0;
+  $('syncBtn').hidden=!has;$('syncBtn').disabled=syncing;$('syncBtn').textContent=syncing?'Sincronizando…':'Sincronizar ahora';
+  let h='';
+  if(!bank.server)h+='<p class="muted" style="font-size:14px">Conecta tus bancos y los movimientos llegarán solos cada vez que abras la app. Sigue la guía del repositorio para preparar el servidor y luego rellena los ajustes de abajo.</p>';
+  else if(!has)h+='<p class="muted" style="font-size:14px">Todavía no hay ningún banco conectado. Elige uno en los ajustes de abajo.</p>';
+  bank.conns.forEach((c,i)=>{
+    const acc=(c.accounts||[]).length;
+    h+=`<div class="conn"><strong>${esc(c.aspsp.name)}</strong><span class="muted">${acc} ${acc===1?'cuenta':'cuentas'}</span>${expired(c)?'<span class="err">Autorización caducada</span>':`<span class="muted">Autorizado hasta ${fmtD(c.valid_until)}</span>`}${c.lastSync?`<span class="muted">Última sincronización ${fmtDT(c.lastSync)}</span>`:''}${c.error?`<span class="err">${esc(c.error)}</span>`:''}<button class="btn sm" type="button" data-reconn="${i}">${expired(c)?'Volver a autorizar':'Renovar'}</button><button class="x" type="button" data-delconn="${i}" aria-label="Quitar ${esc(c.aspsp.name)}">×</button></div>`;
+  });
+  if(bankMsg)h+=`<div class="conn">${bankMsg}</div>`;
+  $('bankStatus').innerHTML=h;
+}
+async function loadAspsps(){
+  const d=await api('/aspsps?country=ES');
+  aspsps=(d.aspsps||[]).filter(a=>!a.psu_types||a.psu_types.includes('personal')).sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  $('bkAspsp').innerHTML=aspsps.map((a,i)=>`<option value="${i}">${esc(a.name)}</option>`).join('');
+  $('bkAdd').hidden=false;
+  return aspsps;
+}
+async function connectBank(a){
+  const days=a.maximum_consent_validity?Math.floor(a.maximum_consent_validity/86400):90;
+  const st=uid()+uid();
+  bank.pendingAuth={state:st,aspsp:{name:a.name,country:a.country||'ES'}};bankSave();
+  const r=await api('/auth',{name:a.name,country:a.country||'ES',days,state:st,redirect_url:redirectUrl()});
+  location.href=r.url;
+}
+async function finishAuth(code){
+  const s=await api('/session',{code});
+  const aspsp=(bank.pendingAuth&&bank.pendingAuth.aspsp)||s.aspsp||{name:'Banco',country:'ES'};
+  const accounts=(s.accounts||[]).map(a=>({uid:a.uid,name:a.name||a.product||'',iban:(a.account_id&&a.account_id.iban)||''}));
+  bank.conns=bank.conns.filter(c=>c.aspsp.name!==aspsp.name);
+  bank.conns.push({aspsp,session_id:s.session_id,accounts,valid_until:(s.access&&s.access.valid_until)||null,lastSync:null});
+  bank.pendingAuth=null;bankSave();
+}
+function ebToTx(t,bankName){
+  if(t.status&&t.status!=='BOOK')return null;
+  const amt=parseFloat(t.transaction_amount&&t.transaction_amount.amount);if(!isFinite(amt)||amt===0)return null;
+  const sign=t.credit_debit_indicator==='DBIT'?-1:1;const amount=Math.round(sign*Math.abs(amt)*100)/100;
+  const date=String(t.booking_date||t.value_date||t.transaction_date||'').slice(0,10);if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return null;
+  const party=sign<0?(t.creditor&&t.creditor.name):(t.debtor&&t.debtor.name);
+  const rem=(t.remittance_information||[]).join(' ').replace(/\s+/g,' ').trim();
+  const concept=[party,rem].filter(Boolean).filter((v,i,arr)=>i===0||!norm(arr[0]).includes(norm(v))).join(' · ')||(t.bank_transaction_code&&t.bank_transaction_code.description)||'(sin concepto)';
+  return {ext:'eb:'+bankName+':'+(t.entry_reference||t.transaction_id||date+'|'+amount+'|'+norm(concept)),date,concept,amount};
+}
+async function syncAll(){
+  if(syncing||!bank.conns.length)return;
+  syncing=true;bankMsg='';renderBank();
+  let added=0,failed=0;
+  const haveExt=new Set(state.tx.filter(t=>t.ext).map(t=>t.ext));
+  const fileKeys={};state.tx.filter(t=>!t.ext&&!state.sample).forEach(t=>{const k=t.date+'|'+t.amount.toFixed(2);fileKeys[k]=(fileKeys[k]||0)+1});
+  for(const c of bank.conns){
+    if(expired(c)){c.error='Vuelve a autorizar el acceso para seguir sincronizando.';continue}
+    c.error=null;
+    const from=c.lastSync?new Date(new Date(c.lastSync).getTime()-7*86400000):new Date(Date.now()-365*86400000);
+    try{
+      for(const a of c.accounts||[]){
+        let d;
+        try{d=await api('/transactions?account='+encodeURIComponent(a.uid)+'&date_from='+from.toISOString().slice(0,10))}
+        catch(e){if(c.lastSync)throw e;d=await api('/transactions?account='+encodeURIComponent(a.uid)+'&date_from='+new Date(Date.now()-89*86400000).toISOString().slice(0,10))}
+        for(const t of d.transactions||[]){
+          const x=ebToTx(t,c.aspsp.name);if(!x||haveExt.has(x.ext))continue;
+          const k=x.date+'|'+x.amount.toFixed(2);
+          haveExt.add(x.ext);
+          if(fileKeys[k]>0){fileKeys[k]--;continue} // already imported from a statement file
+          if(state.sample){state.tx=[];state.files=[];state.sample=false}
+          state.tx.push({id:uid(),ext:x.ext,date:x.date,concept:x.concept,amount:x.amount,cat:categorize(x.concept,x.amount),src:c.aspsp.name+(c.accounts.length>1&&a.name?' · '+a.name:'')});added++;
+        }
+      }
+      c.lastSync=new Date().toISOString();
+    }catch(e){failed++;c.error=e.status===403?'El banco ha rechazado el acceso. Vuelve a autorizarlo.':(e.message||String(e))}
+  }
+  syncing=false;bankSave();save();
+  bankMsg=added?`<span class="ok">${added} ${added===1?'movimiento nuevo':'movimientos nuevos'}</span>`:(failed?'':'<span class="muted">No hay movimientos nuevos</span>');
+  render();renderBank();
+}
+function maybeAutoSync(){
+  if(!bank.conns.length||syncing)return;
+  const last=Math.max(0,...bank.conns.map(c=>c.lastSync?new Date(c.lastSync).getTime():0));
+  if(Date.now()-last>15*60000)syncAll();
+}
+async function bankBoot(){
+  bankLoad();
+  const q=new URLSearchParams(location.search);
+  const code=q.get('code'),err=q.get('error');
+  if(code||err)history.replaceState(null,'',redirectUrl());
+  if(err){bankMsg=`<span class="err">El banco no completó la autorización (${esc(q.get('error_description')||err)}).</span>`}
+  else if(code){
+    if(bank.server&&bank.token&&bank.pendingAuth&&bank.pendingAuth.state===q.get('state')){
+      try{await finishAuth(code);bankMsg='<span class="ok">Banco conectado.</span>'}catch(e){bankMsg=`<span class="err">${esc(e.message)}</span>`}
+    }else{
+      $('bankSetup').open=true;$('bkCode').value=code;
+      bankMsg='<span>Copia el código que aparece en los ajustes, abre la app desde la pantalla de inicio y pégalo allí.</span>';
+    }
+  }
+  if(!bank.server||!bank.conns.length)$('bankSetup').open=true;
+  renderBank();
+  if(bank.server&&bank.token&&!bank.conns.length)loadAspsps().catch(()=>{});
+  maybeAutoSync();
+}
+$('syncBtn').addEventListener('click',()=>syncAll());
+$('bkSave').addEventListener('click',async()=>{
+  bank.server=$('bkServer').value.trim();bank.token=$('bkToken').value.trim();bankSave();
+  try{await loadAspsps();bankMsg=`<span class="ok">Servidor conectado: ${aspsps.length} bancos disponibles.</span>`}catch(e){bankMsg=`<span class="err">${esc(e.message)}</span>`}
+  renderBank();
+});
+$('bkConnect').addEventListener('click',async()=>{
+  const a=aspsps[+$('bkAspsp').value];if(!a)return;
+  try{await connectBank(a)}catch(e){bankMsg=`<span class="err">${esc(e.message)}</span>`;renderBank()}
+});
+$('bkCodeBtn').addEventListener('click',async()=>{
+  const code=$('bkCode').value.trim();if(!code)return;
+  try{await finishAuth(code);$('bkCode').value='';bankMsg='<span class="ok">Banco conectado.</span>';renderBank();syncAll()}catch(e){bankMsg=`<span class="err">${esc(e.message)}</span>`;renderBank()}
+});
+$('bankStatus').addEventListener('click',async e=>{
+  const r=e.target.closest('[data-reconn]'),d=e.target.closest('[data-delconn]');
+  if(r){const c=bank.conns[+r.dataset.reconn];try{if(!aspsps.length)await loadAspsps();const a=aspsps.find(x=>x.name===c.aspsp.name)||c.aspsp;await connectBank(a)}catch(err){bankMsg=`<span class="err">${esc(err.message)}</span>`;renderBank()}}
+  if(d){bank.conns.splice(+d.dataset.delconn,1);bankSave();renderBank()}
+});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')maybeAutoSync()});
+
 /* ---------- boot ---------- */
 if(!load()){state={tx:[],cats:defaultCatsLite(),rules:[],sample:true,files:[]};state.tx=sampleTx()}
 render();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>render());
-window.__cg={parseNum,parseDate,rowsToTx,parseCSV,categorize,state:()=>state};
+bankBoot();
+window.__cg={ebToTx,parseNum,parseDate,rowsToTx,parseCSV,categorize,state:()=>state};
 })();
 </script>
 

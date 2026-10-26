@@ -9,3 +9,7 @@ Los extractos se leen en el navegador y los datos se guardan solo en el disposit
 1. Abre la web de la app en Safari: https://rufechos.github.io/App-tracking-gastos/
 2. Pulsa Compartir.
 3. Elige «Añadir a pantalla de inicio».
+
+## Conectar tus bancos
+
+Para que los movimientos lleguen solos, sigue la guía [SINCRONIZAR.md](SINCRONIZAR.md).
