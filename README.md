@@ -6,6 +6,6 @@ Los extractos se leen en el navegador y los datos se guardan solo en el disposit
 
 ## Instalar en el iPhone
 
-1. Abre la web de la app en Safari: https://rufechos.github.io/app-tracking-gastos/
+1. Abre la web de la app en Safari: https://rufechos.github.io/App-tracking-gastos/
 2. Pulsa Compartir.
 3. Elige «Añadir a pantalla de inicio».
