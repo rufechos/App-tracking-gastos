@@ -77,7 +77,8 @@ select,input[type=text],input[type=search],input[type=password],input[type=numbe
 .form input[type=text],.form input[type=password],.form input[type=url]{width:100%}
 .form .row2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .form .row3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.form .row2 input,.form .row3 input{width:100%}
+.form .row2 > div,.form .row3 > div{display:flex;flex-direction:column;justify-content:flex-end;min-width:0}
+.form .row2 input,.form .row3 input,.form .row2 select,.form .row3 select{width:100%}
 details summary{cursor:pointer;font-weight:500;margin-top:10px;min-height:32px}
 .check{display:flex;gap:8px;align-items:center;font-size:14px}
 .check input{width:20px;height:20px}
@@ -182,8 +183,40 @@ td.r,th.r{text-align:right;white-space:nowrap}
 .addcat{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 .addcat input{flex:1 1 240px;min-width:0}
 .rules{margin-top:16px;border-top:1px solid var(--line);padding-top:14px}
+.rule-list li{padding:4px 0;border-bottom:1px solid var(--line)}
+.rule-list li > span:first-child{min-width:0;overflow-wrap:anywhere}
+.rule-list .tools{flex-wrap:nowrap;gap:2px}
+.rule-form{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.rule-form h3{margin:0 0 4px}
+.rule-preview{margin-top:10px;font-size:14px}
+.rule-preview p{margin:0 0 6px}
 .acct{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
 .acct .meta{color:var(--muted);font-size:13px;grid-column:1 / -1}
+
+/* Budgets: a bar per category and a mark for the part of the month gone */
+.bud-list,.plain-list{list-style:none;margin:0;padding:0}
+.bud{padding:9px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.bud-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;font-size:14px}
+.bud-top .n{font-weight:500;min-width:0;overflow-wrap:anywhere}
+.bud-top .num{white-space:nowrap}
+.bud-bar{position:relative;height:8px;background:var(--soft);border-radius:4px;margin:6px 0 4px}
+.bud-bar i{display:block;height:100%;border-radius:4px;background:var(--s1)}
+.bud[data-st="fast"] .bud-bar i{background:var(--s4)}
+.bud[data-st="over"] .bud-bar i{background:var(--bad)}
+.bud-bar b{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink);border-radius:1px}
+.bud-fields{display:flex;flex-direction:column}
+.bud-row{display:grid;grid-template-columns:minmax(0,1fr) 128px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px}
+.bud-row input{width:100%;text-align:right}
+.pl-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px;align-items:baseline}
+.pl-item .n{font-weight:500;overflow-wrap:anywhere}
+.pl-item .num{white-space:nowrap;text-align:right}
+.pl-item .meta{grid-column:1 / -1;color:var(--muted);font-size:13px}
+.inline-form{grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px}
+.inline-form input{flex:1 1 140px}
+tr.pick{cursor:pointer}
+tr.pick.on td{background:var(--soft)}
+.kpis.kpis3{grid-template-columns:repeat(3,minmax(0,1fr))}
+@media (max-width:860px){.kpis.kpis3{grid-template-columns:repeat(2,minmax(0,1fr))}.kpis.kpis3 .kpi:first-child{grid-column:1 / -1}}
 
 /* Investments */
 .inv-forms{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
@@ -193,6 +226,12 @@ td.r,th.r{text-align:right;white-space:nowrap}
 .inv-item .v{font-family:var(--f-mono);text-align:right;white-space:nowrap}
 .inv-item .meta{grid-column:1 / -1;color:var(--muted);font-size:13px;display:flex;gap:4px 12px;flex-wrap:wrap}
 .inv-item .acts{grid-column:1 / -1;display:flex;gap:6px}
+.note{margin-top:10px;max-width:80ch}
+.fee-form{margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}
+.fee-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:2px 10px}
+.fee-grid > div{display:flex;flex-direction:column;min-width:0}
+.fee-grid input,.fee-grid select{width:100%}
+.form label.check{color:var(--ink);font-size:14px;margin-top:0}
 
 .privacy{font-size:13px;color:var(--muted);max-width:70ch}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar) + 16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.2)}

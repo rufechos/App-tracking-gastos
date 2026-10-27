@@ -17,4 +17,7 @@ export const ui = {
   update: null, // a waiting service worker with a new version
   restore: null, // a backup file being restored, waiting for confirmation
   claimTimer: null,
+  anCat: null, // the category whose evolution Análisis shows
+  worthEdit: null, // the account whose balance you are typing
+  scrollTo: null, // a section to bring into view after the next drawing
 };
