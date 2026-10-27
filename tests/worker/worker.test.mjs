@@ -390,3 +390,37 @@ test('repaso programado: gasto grande, presupuesto superado y permiso a punto de
   await run();
   assert.equal((await e.CG.list({ prefix: 'push:' })).keys.length, 0); // the subscription is gone
 });
+
+test('repaso programado: lo que la app ya tenía no se avisa ni se cuenta otra vez en el presupuesto', async () => {
+  const e = env();
+  const key = (await (await call('/push/key', { e })).json()).key;
+  const s = subscriber('https://web.push.apple.com');
+  const now = Date.now(), day = (n) => new Date(now - n * 864e5).toISOString().slice(0, 10);
+  let txs = [];
+  handler = (c) => (c.url.hostname === 'api.enablebanking.com' ? res({ transactions: txs }) : new Response(null, { status: 201 }));
+  const run = async () => {
+    out.length = 0;
+    let job;
+    await worker.scheduled({ cron: '0 7,13,19 * * *' }, e, { waitUntil: (p) => { job = p; } });
+    await job;
+    return out.filter((c) => c.url.hostname === 'web.push.apple.com').map((c) => readPush(c, s, key).title.replace(/\s/g, ' '));
+  };
+  const subscribe = (known) => call('/push/subscribe', { method: 'POST', e, body: {
+    sub: s.sub, prefs: { big: 100, budget: true, expiry: false },
+    conns: [{ id: 'c_ing', name: 'ING', valid_until: null, accounts: [{ uid: 'ing1' }] }],
+    own: { ibans: [], names: [] }, known,
+    watch: { month: day(0).slice(0, 7), cats: [{ id: 'restaurantes', name: 'Restaurantes y bares', limit: 200, left: 20, kws: ['la pepica'] }] },
+  } });
+  await subscribe([]);
+  assert.deepEqual(await run(), []); // primes the account
+  // The app syncs first: it already counted the dinner (by date and amount) and the big purchase (by the bank's reference)
+  await subscribe([{ d: day(0), a: -45, r: '' }, { d: day(0), a: -120, r: 'n1' }]);
+  txs = [
+    bt({ entry_reference: 'n1', booking_date: day(0), transaction_amount: amt('120.00'), creditor: { name: 'IKEA VALENCIA' } }),
+    bt({ entry_reference: 'n4', booking_date: day(0), transaction_amount: amt('45.00'), remittance_information: ['COMPRA RESTAURANTE LA PEPICA'] }),
+  ];
+  assert.deepEqual(await run(), []);
+  // A new one the app has not seen yet still counts
+  txs = txs.concat(bt({ entry_reference: 'n7', booking_date: day(0), transaction_amount: amt('25.00'), remittance_information: ['COMPRA RESTAURANTE LA PEPICA'] }));
+  assert.deepEqual(await run(), ['Presupuesto de Restaurantes y bares superado']);
+});

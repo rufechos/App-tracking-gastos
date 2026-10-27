@@ -233,6 +233,23 @@ tr.pick.on td{background:var(--soft)}
 .fee-grid input,.fee-grid select{width:100%}
 .form label.check{color:var(--ink);font-size:14px;margin-top:0}
 
+.push-form{margin-top:4px}
+.push-big{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;font-size:14px}
+.push-big input[type=text]{width:88px}
+
+/* Lock screen: js/lock-boot.js sets html.locked before anything is drawn */
+.lock{display:none}
+html.locked .lock{display:flex;position:fixed;inset:0;z-index:100;background:var(--bg);align-items:center;justify-content:center;padding:24px max(16px,env(safe-area-inset-right)) 24px max(16px,env(safe-area-inset-left))}
+html.locked body > :not(.lock){visibility:hidden}
+.lock-box{display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;width:100%;max-width:340px}
+.lock-box img{width:72px;height:72px;border-radius:16px}
+.lock-box h1{margin:0 0 8px}
+.lock-box .btn{width:100%}
+.lock-box p{margin:0;min-height:1.4em}
+.lock-box details{width:100%;font-size:14px;text-align:left}
+.lock-box summary{cursor:pointer;color:var(--accent);text-align:center}
+.lock-box .form{margin-top:8px}
+
 .privacy{font-size:13px;color:var(--muted);max-width:70ch}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--tabbar) + 16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:20;max-width:min(92vw,520px);box-shadow:0 4px 16px rgba(0,0,0,.2)}
 

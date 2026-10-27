@@ -16,6 +16,7 @@ export async function loadFeatures() {
     const d = await api('/ping');
     ui.features = d.features || {};
     ui.serverVersion = d.version || 1;
+    ui.cron = d.cron || null;
   } catch (e) { ui.features = null; throw e; }
   return ui.features;
 }
@@ -149,8 +150,8 @@ export async function syncAll({ manual = false, only = null } = {}) {
 }
 
 export function maybeAutoSync() {
-  if (!hasServer() || ui.syncing) return;
-  if (app.bank.conns.some((c) => dueForSync(c))) syncAll();
+  if (!hasServer() || ui.syncing) return null;
+  return app.bank.conns.some((c) => dueForSync(c)) ? syncAll() : null;
 }
 
 // The old way back from the bank (?code=… in the app's address), still used when the server has no KV.

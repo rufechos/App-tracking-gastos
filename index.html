@@ -17,10 +17,26 @@
 <meta name="theme-color" content="#f4f6f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111513" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="js/lock-boot.js"></script>
 <link rel="stylesheet" href="css/app.css">
 <script type="module" src="js/main.js"></script>
 </head>
 <body>
+<div class="lock" id="lockScreen">
+  <div class="lock-box">
+    <img src="apple-touch-icon.png" alt="" width="72" height="72">
+    <h1>Cuaderno de gastos</h1>
+    <button class="btn primary" type="button" id="lockBtn">Desbloquear con Face ID</button>
+    <p class="small" id="lockMsg" role="status"></p>
+    <details id="lockAlt">
+      <summary>¿No funciona? Usa tu código de recuperación</summary>
+      <form class="form" id="lockCodeForm">
+        <label for="lockCode">Código de recuperación</label><input type="text" id="lockCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH-JKLM">
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+    </details>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div>
@@ -287,6 +303,16 @@
       </form>
     </section>
 
+    <section class="panel" id="pushPanel">
+      <div class="panel-head"><h2>Avisos en el iPhone</h2></div>
+      <div id="pushBody"></div>
+    </section>
+
+    <section class="panel" id="lockPanel">
+      <div class="panel-head"><h2>Bloqueo con Face ID</h2></div>
+      <div id="lockBody"></div>
+    </section>
+
     <section class="panel" id="dataPanel">
       <div class="panel-head"><h2>Copia de seguridad</h2><span class="muted small" id="lastBackup"></span></div>
       <p class="muted small">Tus datos viven solo en este dispositivo. Guarda una copia en Archivos o en iCloud Drive para no perderlos si cambias de iPhone. La copia no incluye la clave del servidor.</p>
@@ -296,6 +322,10 @@
         <button class="btn" type="button" id="csvBtn">Exportar movimientos a CSV</button>
       </div>
       <div class="files" id="restoreBox"></div>
+      <div class="rules" id="vaultBox">
+        <h3>Copia cifrada en tu servidor</h3>
+        <div id="vaultBody"></div>
+      </div>
       <div class="rules">
         <h3>Borrar datos</h3>
         <div class="tools" id="resetBox" style="margin-top:8px"><button class="btn danger" id="resetBtn" type="button">Borrar todos los datos</button></div>

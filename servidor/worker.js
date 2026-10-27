@@ -412,6 +412,7 @@ async function pushRoute(req, url, env, json) {
       own: { ibans: (b.own && Array.isArray(b.own.ibans) ? b.own.ibans : []).slice(0, 20).map((v) => str(v, 34)),
         names: (b.own && Array.isArray(b.own.names) ? b.own.names : []).slice(0, 40).map((v) => norm(str(v, 60))).filter((v) => v.length > 2) },
       watch: cleanWatch(b.watch),
+      known: cleanKnown(b.known),
       seen: prev.seen || {}, primed: prev.primed || {}, sent: prev.sent || {}, lastRun: prev.lastRun || null, at: new Date().toISOString(),
     };
     // A budget you are already over when the app sends it: you know it, no notification.
@@ -431,6 +432,10 @@ async function pushRoute(req, url, env, json) {
   }
   return json({ error: 'Ruta desconocida.' }, 404);
 }
+
+// Recent movements the app already had when it sent this: counted in its budgets, and you have seen them.
+const cleanKnown = (k) => (Array.isArray(k) ? k : []).slice(0, 300).filter((x) => x && /^\d{4}-\d{2}-\d{2}$/.test(String(x.d)))
+  .map((x) => ({ d: String(x.d), a: num(x.a), r: str(x.r, 100) }));
 
 function cleanWatch(w) {
   if (!w || !/^\d{4}-\d{2}$/.test(String(w.month)) || !Array.isArray(w.cats)) return null;
@@ -462,7 +467,7 @@ function txLite(t) {
     || (t.bank_transaction_code && t.bank_transaction_code.description) || 'Sin concepto';
   const date = String(t.transaction_date || t.value_date || t.booking_date || '').slice(0, 10);
   const key = t.entry_reference ? 'r:' + t.entry_reference : String(t.booking_date || date) + '|' + amount.toFixed(2) + '|' + norm(concept);
-  return { amount, concept, date, key, iban: String((acct && acct.iban) || '').replace(/\s/g, '').toUpperCase() };
+  return { amount, concept, date, key, ref: t.entry_reference ? String(t.entry_reference) : '', iban: String((acct && acct.iban) || '').replace(/\s/g, '').toUpperCase() };
 }
 
 async function checkAll(env) {
@@ -484,6 +489,7 @@ async function checkAll(env) {
 // trigger uses 3). The first time an account is seen, its movements are only remembered, not notified.
 async function checkOne(env, eb, rec, now) {
   const today = now.toISOString().slice(0, 10), notes = [], big = [], over = [];
+  rec.known = rec.known || [];
   const from = new Date(now.getTime() - 4 * 864e5).toISOString().slice(0, 10);
   for (const c of rec.conns) {
     if (!c.valid_until) continue;
@@ -514,6 +520,8 @@ async function checkOne(env, eb, rec, now) {
           if (rec.seen[h]) continue;
           rec.seen[h] = today;
           if (first || x.amount >= 0) continue;
+          const k = rec.known.findIndex((y) => (y.r && x.ref ? y.r === x.ref : y.d === x.date && y.a === x.amount));
+          if (k >= 0) { rec.known.splice(k, 1); continue; }
           const n = norm(x.concept);
           if (rec.own.ibans.includes(x.iban) || rec.own.names.some((o) => has(n, o))) continue; // between your accounts
           if (rec.prefs.big > 0 && -x.amount >= rec.prefs.big) big.push({ ...x, where: c.name });
@@ -537,6 +545,7 @@ async function checkOne(env, eb, rec, now) {
   for (const b of over) notes.push({ title: 'Presupuesto de ' + b.name + ' superado', body: 'Llevas ' + eur(b.limit - b.left) + ' de ' + eur(b.limit) + ' este mes.', url: '#inicio', tag: 'budget-' + b.id });
   const oldSeen = new Date(now.getTime() - 10 * 864e5).toISOString().slice(0, 10), oldSent = new Date(now.getTime() - 60 * 864e5).toISOString().slice(0, 10);
   for (const k of Object.keys(rec.seen)) if (rec.seen[k] < oldSeen) delete rec.seen[k];
+  rec.known = rec.known.filter((y) => y.d >= oldSeen);
   for (const k of Object.keys(rec.sent)) if (rec.sent[k] < oldSent) delete rec.sent[k];
   rec.lastRun = now.toISOString();
   for (const msg of notes.slice(0, 3)) {

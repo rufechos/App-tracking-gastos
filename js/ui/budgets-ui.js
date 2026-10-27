@@ -7,6 +7,7 @@ import { budgetStatus, proposeBudgets, averages } from '../budgets.js';
 import { monthsOf } from '../aggregate.js';
 import { parseNum } from '../parse/numbers.js';
 import { money, pct, fmt0 } from '../util.js';
+import { refreshPush } from './push-ui.js';
 
 let proposal = null; // what «Proponer» offered, until you save it
 
@@ -84,5 +85,6 @@ export function bindBudgets() {
     save();
     app.render();
     toast(Object.keys(out).length ? 'Presupuestos guardados.' : 'Presupuestos quitados.');
+    refreshPush();
   });
 }
