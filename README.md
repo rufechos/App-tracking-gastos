@@ -1,8 +1,8 @@
 # Cuaderno de gastos
 
-App web instalable para controlar ingresos y gastos a partir de los extractos del banco (CSV, Excel o PDF). Agrupa los movimientos en categorías mensuales y muestra gráficos con el porcentaje que va a cada una.
+App web instalable para controlar ingresos y gastos a partir de los extractos del banco (CSV, Excel o PDF) o de la sincronización con tus bancos. Agrupa los movimientos por categorías, separa los traspasos entre tus propias cuentas y sigue tu cartera de inversión.
 
-Los extractos se leen en el navegador y los datos se guardan solo en el dispositivo; nada se sube a ningún servidor.
+Los extractos se leen dentro del dispositivo y los datos se guardan solo en él. Si conectas tus bancos, los movimientos pasan por tu propio servidor de Cloudflare, que no los guarda.
 
 ## Instalar en el iPhone
 
@@ -10,10 +10,39 @@ Los extractos se leen en el navegador y los datos se guardan solo en el disposit
 2. Pulsa Compartir.
 3. Elige «Añadir a pantalla de inicio».
 
-## Inversiones
+Usa siempre la app desde ese icono: Safari y la app instalada guardan sus datos por separado.
 
-La sección «Inversiones» sigue tu cartera de Renta 4, Trade Republic u otros brókers: añade las posiciones a mano o importa el informe de posiciones (Excel, CSV o PDF). El dinero que envías a los brókers va a la categoría «Inversión» y no cuenta como gasto.
+## Qué hace
+
+- **Inicio**: el mes en curso, lo que queda **por revisar** (movimientos sin categoría clara, posibles duplicados, devoluciones y traspasos dudosos) y la evolución de los últimos meses.
+- **Movimientos**: búsqueda por concepto o importe y filtros por categoría y cuenta. Al cambiar la categoría de un movimiento, la app aprende el nombre para los siguientes.
+- **Análisis**: el reparto del gasto y de los ingresos por categoría en un mes, un año, los últimos 12 meses o todo.
+- **Inversiones**: tus posiciones en Renta 4, Trade Republic u otros brókers, con precios actualizados por ISIN.
+- **Ajustes**: importar extractos, bancos conectados, **Mis cuentas**, categorías y reglas, y la copia de seguridad.
+
+**Mis cuentas** es la lista de tus cuentas, tarjetas y brókers. Con ella, el pago mensual de la tarjeta, lo que mandas a Trade Republic o lo que te transfieres a ti mismo no cuenta como gasto ni como ingreso. Las devoluciones restan del gasto de la compra que anulan.
 
 ## Conectar tus bancos
 
 Para que los movimientos lleguen solos, sigue la guía [SINCRONIZAR.md](SINCRONIZAR.md).
+
+## Copia de seguridad
+
+**Ajustes › Copia de seguridad › Exportar copia** guarda todo (menos la clave del servidor) en un archivo que puedes llevar a Archivos o iCloud Drive. La app te lo recuerda cada 30 días.
+
+## Para desarrollar
+
+No hay paso de compilación: son módulos de JavaScript que el navegador carga tal cual.
+
+```
+npm install          # solo para las pruebas
+npm start            # la app en http://127.0.0.1:8080/
+npm test             # pruebas de la lógica y del servidor
+npm run test:e2e     # la app completa en Chromium, a tamaño iPhone
+npm run stamp        # tras cambiar cualquier archivo: nueva versión del service worker
+```
+
+- `js/` la lógica (lectura de extractos en `js/parse/`, categorías, cuentas, duplicados, sincronización) y `js/ui/` las pantallas.
+- `servidor/worker.js` el servidor de Cloudflare que habla con Enable Banking.
+- `vendor/` y `fonts/` las librerías y fuentes, incluidas en el repositorio ([licencias](vendor/LICENSES.md)).
+- `tests/` las pruebas; GitHub las pasa en cada pull request.
