@@ -1,0 +1,43 @@
+# Runs every test on each pull request (and on main) so that a change cannot break the app unnoticed.
+name: Pruebas
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pruebas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruebas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: El service worker está al día
+        run: npm run check
+      - name: Lógica y servidor
+        run: npm test
+      - name: Instalar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: La app completa en tamaño iPhone
+        run: npm run test:e2e
+      - name: Informe si algo falla
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: informe-pruebas
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -1,0 +1,17 @@
+{
+  "name": "cuaderno-gastos",
+  "private": true,
+  "type": "module",
+  "description": "App web instalable para controlar ingresos y gastos a partir de los extractos y de la sincronización bancaria.",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "stamp": "node tools/stamp-sw.mjs",
+    "check": "node tools/stamp-sw.mjs --check",
+    "test": "node --test \"tests/unit/*.test.mjs\" \"tests/worker/*.test.mjs\"",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "http_ece": "1.2.1"
+  }
+}
