@@ -234,3 +234,14 @@ test('cartera: importar un informe sustituye las posiciones de ese bróker y con
   snapshot(inv, '2026-10-27');
   assert.equal(inv.history.filter((h) => h.d === '2026-10-27').length, 1);
 });
+
+test('al abrir datos antiguos aparece «Donaciones» y los donativos se recolocan', () => {
+  const cats = emptyState().cats.filter((c) => c.id !== 'donaciones');
+  const s = upgrade({ v: 2, cats, rules: [], tx: [
+    { id: 'a', date: '2026-10-01', amount: -30, concept: 'Bizum enviado donativo Caritas', cat: 'transf_env' },
+    { id: 'b', date: '2026-10-02', amount: -30, concept: 'Bizum enviado donativo Caritas', cat: 'transf_env', manual: true },
+  ] });
+  assert.ok(s.cats.some((c) => c.id === 'donaciones'));
+  assert.equal(s.tx[0].cat, 'donaciones');
+  assert.equal(s.tx[1].cat, 'transf_env');
+});

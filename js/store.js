@@ -66,7 +66,11 @@ export function upgrade(raw) {
     classify(s);
     return s;
   }
-  return normalizeState(s);
+  const had = new Set((s.cats || []).map((c) => c.id));
+  const st = normalizeState(s);
+  // A category added in a new version (e.g. «Donaciones»): re-sort the automatic movements once.
+  if (had.size && st.cats.some((c) => !had.has(c.id))) classify(st);
+  return st;
 }
 
 export function load() {

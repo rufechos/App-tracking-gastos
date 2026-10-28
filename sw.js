@@ -1,6 +1,6 @@
 // Offline support. The app's files are served from the cache straight away (a fast start with poor coverage);
 // when this file changes, the new version is downloaded in the background and the app offers to reload.
-const VERSION = 'ab5564230954'; // tools/stamp-sw.mjs writes a hash of the files below
+const VERSION = 'f7f3391b66db'; // tools/stamp-sw.mjs writes a hash of the files below
 const LIBS_VERSION = 'e4d1d4f0c255'; // the same, for vendor/ only: the big libraries are kept across app updates
 const APP_CACHE = 'cg-app-' + VERSION;
 const LIBS_CACHE = 'cg-libs-' + LIBS_VERSION;
