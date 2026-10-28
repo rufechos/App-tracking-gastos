@@ -17,6 +17,7 @@ import { renderVault, bindVault, autoVault } from './ui/vault-ui.js';
 import { bindLock, renderLockSettings, bindLockSettings } from './ui/lock-ui.js';
 import { renderPush, bindPush, refreshPush } from './ui/push-ui.js';
 import { renderBudgetSettings, bindBudgets } from './ui/budgets-ui.js';
+import { renderPayday, bindPayday } from './ui/payday-ui.js';
 import { renderWorth, bindWorth } from './ui/worth-ui.js';
 import { renderNotices, bindNotices, setReturnedCode } from './ui/notices.js';
 import { bindReview, reviewCount, resetReviewView } from './ui/review-ui.js';
@@ -30,7 +31,7 @@ const VIEWS = {
   movimientos: renderMoves,
   analisis: renderAnalysis,
   inversiones: () => { renderWorth(); renderInv(); },
-  ajustes: () => { renderImport(); renderBank(); renderAccounts(); renderCats(); renderBudgetSettings(); renderPush(); renderLockSettings(); renderBackup(); renderVault(); },
+  ajustes: () => { renderImport(); renderBank(); renderAccounts(); renderCats(); renderPayday(); renderBudgetSettings(); renderPush(); renderLockSettings(); renderBackup(); renderVault(); },
 };
 
 function renderHeader() {
@@ -96,7 +97,7 @@ async function boot() {
   if (app.state.sample && app.state.tx.length && !app.state.tx.some((t) => t.date.startsWith(ui.period.m))) {
     ui.period = { kind: 'month', m: app.state.tx.map((t) => t.date.slice(0, 7)).sort().pop() };
   }
-  bindTabs(); bindHome(); bindMoves(); bindAnalysis(); bindInv(); bindWorth(); bindImport(); bindBank(); bindAccounts(); bindCats(); bindBudgets(); bindBackup(); bindVault(); bindLockSettings(); bindPush();
+  bindTabs(); bindHome(); bindMoves(); bindAnalysis(); bindInv(); bindWorth(); bindImport(); bindBank(); bindAccounts(); bindCats(); bindPayday(); bindBudgets(); bindBackup(); bindVault(); bindLockSettings(); bindPush();
   bindNotices(renderAll); bindReview(renderAll);
   bindPeriod((changed) => renderAll(changed));
   $('syncBtn').addEventListener('click', () => syncAll({ manual: true }).then(() => refreshPush()));

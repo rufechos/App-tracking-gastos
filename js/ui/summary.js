@@ -2,7 +2,7 @@
 import { app } from '../store.js';
 import { ui } from './state.js';
 import { kindOf } from './cats.js';
-import { agg, monthsOf, byMonth } from '../aggregate.js';
+import { agg, monthsOf, byMonth, txMonth } from '../aggregate.js';
 import { inPeriod, periodMonths, periodBounds } from '../period.js';
 import { money, fmt0, pct, signed, addMonths, plural } from '../util.js';
 
@@ -13,7 +13,7 @@ export function data() {
   const key = JSON.stringify(ui.period);
   if (cache && cache.key === key && cache.state === s) return cache;
   const f = inPeriod(ui.period);
-  const list = s.tx.filter((t) => f(t.date));
+  const list = s.tx.filter((t) => f(txMonth(t)));
   const months = monthsOf(s.tx);
   const per = byMonth(s.tx);
   const monthAgg = new Map([...per].map(([m, l]) => [m, agg(l, kindOf)]));

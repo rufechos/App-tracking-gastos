@@ -1,6 +1,6 @@
 // Offline support. The app's files are served from the cache straight away (a fast start with poor coverage);
 // when this file changes, the new version is downloaded in the background and the app offers to reload.
-const VERSION = 'b469fd95e728'; // tools/stamp-sw.mjs writes a hash of the files below
+const VERSION = 'ab5564230954'; // tools/stamp-sw.mjs writes a hash of the files below
 const LIBS_VERSION = 'e4d1d4f0c255'; // the same, for vendor/ only: the big libraries are kept across app updates
 const APP_CACHE = 'cg-app-' + VERSION;
 const LIBS_CACHE = 'cg-libs-' + LIBS_VERSION;
@@ -15,7 +15,7 @@ const CORE = [
   'js/parse/numbers.js', 'js/parse/csv.js', 'js/parse/tabular.js', 'js/parse/pdf-statement.js', 'js/parse/positions.js', 'js/parse/files.js', 'js/parse/xlsx-worker.js',
   'js/ui/dom.js', 'js/ui/state.js', 'js/ui/cats.js', 'js/ui/charts.js', 'js/ui/period-ui.js', 'js/ui/review-ui.js', 'js/ui/learn.js', 'js/ui/summary.js',
   'js/ui/home.js', 'js/ui/analysis.js', 'js/ui/moves.js', 'js/ui/invest-ui.js', 'js/ui/import-ui.js', 'js/ui/bank-ui.js', 'js/ui/accounts-ui.js',
-  'js/ui/cats-ui.js', 'js/ui/backup-ui.js', 'js/ui/notices.js', 'js/ui/budgets-ui.js', 'js/ui/insights-ui.js', 'js/ui/worth-ui.js', 'js/ui/vault-ui.js', 'js/ui/lock-ui.js', 'js/ui/push-ui.js',
+  'js/ui/cats-ui.js', 'js/ui/backup-ui.js', 'js/ui/notices.js', 'js/ui/budgets-ui.js', 'js/ui/payday-ui.js', 'js/ui/insights-ui.js', 'js/ui/worth-ui.js', 'js/ui/vault-ui.js', 'js/ui/lock-ui.js', 'js/ui/push-ui.js',
 ];
 const LIBS = ['vendor/chart.umd.js', 'vendor/xlsx.full.min.js', 'vendor/pdf.min.js', 'vendor/pdf.worker.min.js'];
 

@@ -1,6 +1,6 @@
 // Monthly budgets per expense category: proposed from your last 6 months, with how fast this month is going.
 import { addMonths, daysInMonth, monthOf, localIso } from './util.js';
-import { agg, byMonth } from './aggregate.js';
+import { agg, byMonth, txMonth } from './aggregate.js';
 
 // Average spending per category over the last 6 complete months that have movements, rounded up to 10 €.
 export function averages(state, kindOf, today = localIso(), months = 6) {
@@ -29,7 +29,7 @@ export function budgetStatus(state, kindOf, month, today = localIso()) {
   const b = state.budgets || {};
   const ids = Object.keys(b).filter((id) => b[id] > 0 && kindOf(id) === 'gasto');
   if (!ids.length) return null;
-  const a = agg(state.tx.filter((t) => t.date.startsWith(month)), kindOf);
+  const a = agg(state.tx.filter((t) => txMonth(t) === month), kindOf);
   const cur = monthOf(today), dim = daysInMonth(month);
   const day = month === cur ? +today.slice(8, 10) : month < cur ? dim : 0;
   const pace = day / dim;

@@ -267,3 +267,30 @@ test('inversiones: el valor neto descuenta la custodia de Renta 4 y la venta en 
   expect(await page.evaluate(() => window.__cg.state().inv.fees['Renta 4'].custodyPct)).toBe(0.25);
   expect(errors).toEqual([]);
 });
+
+test('nómina de finales de mes: cuenta como ingreso del mes siguiente, se ajusta en Ajustes y a mano', async ({ page }) => {
+  const tx = [['2026-09-28', 'NOMINA ACME', 2000, 'nomina'], ['2026-10-02', 'COMPRA TARJ. 4512 MERCADONA', -40, 'supermercado'], ['2026-10-27', 'NOMINA ACME', 2100, 'nomina'], ['2026-10-20', 'BIZUM RECIBIDO ANA', 25, 'transf_rec']]
+    .map(([date, concept, amount, cat], i) => ({ id: 'n' + i, date, concept, amount, cat }));
+  const { errors } = await openApp(page, { path: 'index.html#inicio', state: state0({ tx }) });
+  const income = () => page.locator('#homeKpis .kpi').first().locator('.v');
+  await expect(income()).toContainText('2025,00'); // October: September's salary and the Bizum; October's goes to November
+  await page.goto('index.html#movimientos');
+  await expect(page.locator('#mvList')).toContainText('NOMINA ACME');
+  await expect(page.locator('#mvList .tag.mm.on')).toContainText('→ oct 26');
+
+  // By hand: the Bizum counts in November too
+  await page.locator('select[data-mm="n3"]').selectOption('2026-11');
+  expect((await txs(page)).find((t) => t.id === 'n3').mm).toBe('2026-11');
+  await expect(page.locator('#mvList')).not.toContainText('BIZUM');
+
+  // Off in Ajustes: every income in its own month (the hand-made change stays)
+  await page.goto('index.html#ajustes');
+  await expect(page.locator('#paydayBody')).toContainText('2 ingresos cuentan en el mes siguiente');
+  await page.uncheck('#pdOn');
+  await page.goto('index.html#inicio');
+  await expect(income()).toContainText('2100,00');
+  await page.goto('index.html#ajustes');
+  await page.click('#pdReset');
+  expect((await txs(page)).some((t) => t.mm)).toBe(false);
+  expect(errors).toEqual([]);
+});
