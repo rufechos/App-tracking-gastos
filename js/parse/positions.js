@@ -25,7 +25,7 @@ export function rowsToPositions(rows) {
   for (let i = 0; i < Math.min(rows.length, 60); i++) {
     const h = rows[i].map((c) => norm(c));
     const f = (re, ex) => h.findIndex((x) => x && re.test(x) && !(ex && ex.test(x)));
-    const qi = f(/titulos|cantidad|participaciones|acciones|unidades|shares|quantity|nominal|stuck/, /importe|valor/);
+    const qi = f(/titulos|cantidad|participaciones|acciones|unidades|\buds\b|shares|quantity|nominal|stuck/, /importe|valor/);
     const ni = f(/nombre|producto|instrumento|descripcion|activo|security|denominacion|^valor$|^fondo|^titulo$|name|emisora/, /isin|valoracion|cotizacion/);
     const ii = f(/isin/);
     if (qi < 0 || (ni < 0 && ii < 0)) continue;
@@ -50,7 +50,19 @@ export function rowsToPositions(rows) {
     }
     if (out.length) return out;
   }
-  throw new Error('No encuentro columnas de títulos y nombre o ISIN en el archivo.');
+  const titles = headerGuess(rows);
+  throw new Error('No encuentro columnas de títulos y nombre o ISIN en el archivo.' + (titles.length ? ' Columnas que veo: ' + titles.join(' · ') + '.' : ''));
+}
+
+// The first row that reads like column titles (text, not figures): shown when a report is not understood, so that
+// the titles alone, without any of your figures, are enough to teach the app a new format.
+function headerGuess(rows) {
+  for (const r of rows.slice(0, 60)) {
+    const cells = r.map((c) => String(c ?? '').trim()).filter(Boolean);
+    const words = cells.filter((c) => parseNum(c) == null && !validIsin(c) && c.length <= 40);
+    if (cells.length >= 3 && words.length === cells.length) return words.slice(0, 15);
+  }
+  return [];
 }
 
 // PDF statements list one position per ISIN; the figures sit on the ISIN line or on the name line next to it.

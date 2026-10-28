@@ -1,6 +1,6 @@
 // Offline support. The app's files are served from the cache straight away (a fast start with poor coverage);
 // when this file changes, the new version is downloaded in the background and the app offers to reload.
-const VERSION = '75e499faab22'; // tools/stamp-sw.mjs writes a hash of the files below
+const VERSION = 'b21265a51b3c'; // tools/stamp-sw.mjs writes a hash of the files below
 const LIBS_VERSION = 'e4d1d4f0c255'; // the same, for vendor/ only: the big libraries are kept across app updates
 const APP_CACHE = 'cg-app-' + VERSION;
 const LIBS_CACHE = 'cg-libs-' + LIBS_VERSION;
@@ -12,7 +12,7 @@ const CORE = [
   'js/main.js', 'js/util.js', 'js/store.js', 'js/migrate.js', 'js/sample.js', 'js/categories.js', 'js/classify.js', 'js/accounts.js',
   'js/dedup.js', 'js/refunds.js', 'js/import.js', 'js/review.js', 'js/bank.js', 'js/api.js', 'js/sync.js', 'js/backup.js',
   'js/invest.js', 'js/xirr.js', 'js/period.js', 'js/aggregate.js', 'js/lazy.js', 'js/budgets.js', 'js/recurring.js', 'js/insights.js', 'js/worth.js', 'js/rules.js', 'js/vault.js', 'js/keystore.js', 'js/lock.js', 'js/lock-boot.js', 'js/push.js',
-  'js/parse/numbers.js', 'js/parse/csv.js', 'js/parse/tabular.js', 'js/parse/pdf-statement.js', 'js/parse/positions.js', 'js/parse/files.js', 'js/parse/xlsx-worker.js',
+  'js/parse/numbers.js', 'js/parse/csv.js', 'js/parse/tabular.js', 'js/parse/pdf-statement.js', 'js/parse/positions.js', 'js/parse/traderepublic.js', 'js/parse/files.js', 'js/parse/xlsx-worker.js',
   'js/ui/dom.js', 'js/ui/state.js', 'js/ui/cats.js', 'js/ui/charts.js', 'js/ui/period-ui.js', 'js/ui/review-ui.js', 'js/ui/learn.js', 'js/ui/summary.js',
   'js/ui/home.js', 'js/ui/analysis.js', 'js/ui/moves.js', 'js/ui/invest-ui.js', 'js/ui/import-ui.js', 'js/ui/bank-ui.js', 'js/ui/accounts-ui.js',
   'js/ui/cats-ui.js', 'js/ui/backup-ui.js', 'js/ui/notices.js', 'js/ui/budgets-ui.js', 'js/ui/payday-ui.js', 'js/ui/insights-ui.js', 'js/ui/worth-ui.js', 'js/ui/vault-ui.js', 'js/ui/lock-ui.js', 'js/ui/push-ui.js',

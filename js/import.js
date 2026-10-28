@@ -21,7 +21,7 @@ const rangeOf = (list) => {
   return [lo, hi];
 };
 
-// parsed: { tx: [{date, concept, amount, bal?}], iban }; meta: { name, acct? } -> { entry, fresh }
+// parsed: { tx: [{date, concept, amount, bal?, mcc?, cpName?, cpIban?}], iban }; meta: { name, acct? } -> { entry, fresh }
 export function importStatement(state, parsed, meta) {
   const fid = 'f_' + uid();
   const entry = { id: fid, name: meta.name, added: 0, dup: 0, maybe: 0, flipped: false, error: null, at: new Date().toISOString() };
@@ -53,6 +53,7 @@ export function importStatement(state, parsed, meta) {
     if (twin && twin.level === 'sure') { entry.dup++; if (acct && !twin.tx.acct) twin.tx.acct = acct; continue; }
     const t = { id: uid(), date: r.date, concept: r.concept, amount: r.amount, cat: null, src: meta.name, fid, acct: acct || undefined };
     if (r.bal != null) t.bal = r.bal;
+    for (const k of ['mcc', 'cpName', 'cpIban']) if (r[k]) t[k] = r[k];
     if (!t.acct) delete t.acct;
     if (twin) { t.rv = 'dup'; t.dupOf = twin.tx.id; entry.maybe++; }
     state.tx.push(t);

@@ -294,3 +294,30 @@ test('nómina de finales de mes: cuenta como ingreso del mes siguiente, se ajust
   expect((await txs(page)).some((t) => t.mm)).toBe(false);
   expect(errors).toEqual([]);
 });
+
+test('Trade Republic: su exportación de transacciones da las posiciones abiertas y los movimientos con su comercio', async ({ page }) => {
+  const head = 'datetime,date,account_type,category,type,asset_class,name,symbol,shares,price,amount,fee,tax,currency,original_amount,original_currency,fx_rate,description,transaction_id,counterparty_name,counterparty_iban,payment_reference,mcc_code';
+  const r = (d, cat, type, name, isin, shares, amount, fee, mcc) => [d + 'T10:00:00Z', d, 'DEFAULT', cat, type, '', name, isin, shares, '', amount, fee, '', 'EUR', '', '', '', '', 'x-' + d + type, '', '', '', mcc].map((c) => `"${c}"`).join(',');
+  const csv = [head,
+    r('2026-10-20', 'CASH', 'CARD_TRANSACTION', 'MERCADONA VALENCIA', '', '', '-45.30', '', '5411'),
+    r('2026-10-15', 'TRADING', 'SELL', 'Apple Inc.', 'US0378331005', '2', '480.00', '-1.00', ''),
+    r('2026-09-15', 'TRADING', 'BUY', 'iShares Core MSCI World USD (Acc)', 'IE00B4L5Y983', '2', '-200.00', '', ''),
+    r('2026-09-10', 'TRADING', 'BUY', 'Apple Inc.', 'US0378331005', '5', '-1000.00', '-1.00', ''),
+  ].join('\n') + '\n';
+  const file = { name: 'Transacciones Trade Republic.csv', mimeType: 'text/csv', buffer: Buffer.from(csv) };
+  const { errors } = await openApp(page, { path: 'index.html#inversiones', state: state0({ inv: { positions: [], history: [], lastQuote: null } }) });
+  await page.evaluate(() => { document.getElementById('invSetup').open = true; }); // already open with no positions
+  await page.fill('#invImpBroker', 'Trade Republic');
+  await page.setInputFiles('#invFile', file);
+  await expect(page.locator('#invStatus')).toContainText('2 posiciones importadas de Trade Republic');
+  const inv = await page.evaluate(() => window.__cg.state().inv.positions.map((p) => [p.broker, p.isin, p.qty, p.cost, p.priceDate]).sort());
+  expect(inv).toEqual([['Trade Republic', 'IE00B4L5Y983', 2, 200, '2026-09-15'], ['Trade Republic', 'US0378331005', 3, 600.6, '2026-10-15']]);
+
+  await page.goto('index.html#ajustes');
+  await page.setInputFiles('#file', file);
+  await expect.poll(async () => (await txs(page)).length).toBe(4);
+  const tx = await txs(page);
+  expect(tx.find((t) => t.amount === -45.3)).toMatchObject({ concept: 'MERCADONA VALENCIA', mcc: '5411', cat: 'supermercado' });
+  expect(tx.find((t) => t.amount === -1001)).toMatchObject({ concept: 'Compra de valores Apple Inc.', cat: 'inversion' });
+  expect(errors).toEqual([]);
+});
