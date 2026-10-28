@@ -3,7 +3,8 @@
 import { b64u, unb64u } from './vault.js';
 
 export const LOCK_KEY = 'cuaderno-gastos-bloqueo';
-export const RELOCK = 60e3; // back to the app after this long away: Face ID again
+export const RELOCK = 60e3; // back to the app after this long away: Face ID again (unless chosen in Ajustes)
+export const RELOCK_CHOICES = [1, 5, 15, 60]; // minutes
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // 32 letters and digits, without 0/O and 1/I
 
 const rand = (n) => crypto.getRandomValues(new Uint8Array(n));
@@ -59,6 +60,12 @@ export async function renewCode() {
 }
 
 export function disableLock() { store(null); }
+
+export const relockMs = () => { const c = lockConf(); return (c && c.relock) || RELOCK; };
+export function setRelock(minutes) {
+  const c = lockConf();
+  if (c && RELOCK_CHOICES.includes(minutes)) store({ ...c, relock: minutes * 60e3 });
+}
 
 // -> true when Face ID (or the device's code) said it was you.
 export async function verify() {
