@@ -7,7 +7,7 @@ Necesitas dos cuentas gratuitas:
 - **Cloudflare**: aloja un pequeño servidor tuyo que guarda la clave de Enable Banking y hace de puente con la app.
 - **Enable Banking**: el intermediario autorizado (PSD2) que se conecta a los bancos.
 
-Nadie más que tú tiene la clave. La app y el servidor solo pueden **leer** movimientos; no pueden mover dinero. El servidor no guarda tus movimientos: los pasa a la app y los olvida.
+Nadie más que tú tiene la clave. La app y el servidor solo pueden **leer** movimientos; no pueden mover dinero. El servidor no guarda tus movimientos: los pasa a la app y los olvida. Solo guarda algo más si activas la [copia cifrada](#copia-cifrada), que no puede leer, o los [avisos](#avisos-en-el-iphone), y cada apartado explica qué.
 
 ---
 
@@ -103,7 +103,7 @@ Con el espacio KV y el disparador del paso 1.7, tu servidor mira tus bancos tres
 2. En **Ajustes** → **Avisos en el iPhone**, elige de qué quieres que te avise y pulsa **Activar los avisos**. El iPhone te pedirá permiso.
 3. Pulsa **Enviar un aviso de prueba** para comprobar que llegan.
 
-Para avisarte, el servidor guarda la dirección de los avisos de tu iPhone, las cuentas que tiene que mirar, tus IBAN y nombres (para no contar como gasto lo que te mandas a ti mismo) y cuánto te queda de cada presupuesto. No guarda tus movimientos. Esas consultas sin ti delante cuentan para el límite de unas cuatro al día que ponen algunos bancos; por eso son tres.
+Para avisarte, el servidor guarda la dirección de los avisos de tu iPhone, las cuentas que tiene que mirar, tus IBAN y nombres (para no contar como gasto lo que te mandas a ti mismo) y cuánto te queda de cada presupuesto, con las palabras que reconocen sus gastos (tus reglas y las tiendas donde sueles comprar). De tus movimientos guarda solo la fecha, el importe y la referencia del banco de los gastos de los últimos cinco días que ya tiene la app, y una huella corta de los que ha mirado él, para no avisarte de lo que ya has visto ni dos veces de lo mismo; lo borra a los diez días. No guarda los conceptos. Esas consultas sin ti delante cuentan para el límite de unas cuatro al día que ponen algunos bancos; por eso son tres.
 
 ## Precios de tus inversiones
 

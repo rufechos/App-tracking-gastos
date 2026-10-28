@@ -2,7 +2,7 @@
 
 App web instalable para controlar ingresos y gastos a partir de los extractos del banco (CSV, Excel o PDF) o de la sincronización con tus bancos. Agrupa los movimientos por categorías, separa los traspasos entre tus propias cuentas y sigue tu cartera de inversión.
 
-Los extractos se leen dentro del dispositivo y los datos se guardan solo en él. Si conectas tus bancos, los movimientos pasan por tu propio servidor de Cloudflare, que no los guarda.
+Los extractos se leen dentro del dispositivo y los datos se guardan solo en él. Si conectas tus bancos, los movimientos pasan por tu propio servidor de Cloudflare, que no los guarda. Solo si los activas, guarda una copia cifrada que únicamente puedes abrir tú y lo mínimo para los avisos (fecha e importe de los gastos de los últimos días); lo detalla [SINCRONIZAR.md](SINCRONIZAR.md).
 
 ## Instalar en el iPhone
 
