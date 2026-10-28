@@ -37,7 +37,7 @@ Las variables del paso 3 de Enable Banking se añaden al final; de momento deja 
    - Deja la opción de generar la clave en el navegador.
 4. Al guardar se descarga un archivo **.pem**. Es tu clave privada: guárdalo bien y **no lo compartas con nadie, tampoco por chat**.
 5. Copia el **Application ID** que aparece en la lista de aplicaciones.
-6. En tu aplicación, pulsa **Link accounts** y conecta, uno por uno, tus bancos (ING, Bankinter, Trade Republic, Renta 4…). Esto activa el uso gratuito con tus propias cuentas. Es normal que la aplicación aparezca como *Restricted* y *Active*.
+6. En tu aplicación, pulsa **Activate by linking accounts** (solo aparece mientras la aplicación está inactiva) y conecta, uno por uno, tus bancos (ING, Bankinter, Trade Republic, Renta 4…). Esto activa el uso gratuito con tus propias cuentas. Al terminar, es normal que la aplicación aparezca como *Restricted* y *Active*.
 
 ## 3. Las claves en el servidor
 
