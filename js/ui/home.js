@@ -5,6 +5,7 @@ import { $, esc } from './dom.js';
 import { catName } from './cats.js';
 import { renderPeriod } from './period-ui.js';
 import { renderReview } from './review-ui.js';
+import { renderBudgets } from './budgets-ui.js';
 import { data, kpisHtml, colorMap, chartMonths } from './summary.js';
 import { slotColor, flowChart } from './charts.js';
 import { money, pct } from '../util.js';
@@ -15,6 +16,7 @@ export function renderHome() {
   renderPeriod('homePeriod');
   $('homeKpis').innerHTML = kpisHtml(d.a, d.pm);
   renderReview();
+  renderBudgets();
   const rows = Object.entries(d.a.e).sort((x, y) => y[1] - x[1]);
   const cmap = colorMap();
   const top = rows.slice(0, 8), rest = rows.slice(8).reduce((s, [, v]) => s + v, 0);

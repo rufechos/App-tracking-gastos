@@ -4,17 +4,19 @@ import { ui } from './ui/state.js';
 import { api, hasServer } from './api.js';
 import { classify } from './classify.js';
 import { makeConnection, syncConnection, dueForSync, expired, coolingDown, syncErrorText, COOLDOWN } from './bank.js';
-import { uid, esc, plural } from './util.js';
+import { pickBalance } from './worth.js';
+import { uid, esc, plural, localIso } from './util.js';
 
 export const appUrl = () => location.origin + location.pathname.replace(/index\.html$/, '');
 export const GUIDE = 'https://github.com/rufechos/App-tracking-gastos/blob/main/SINCRONIZAR.md';
-export const SERVER_VERSION = 2; // servidor/worker.js that this app expects
+export const SERVER_VERSION = 3; // servidor/worker.js that this app expects
 
 export async function loadFeatures() {
   try {
     const d = await api('/ping');
     ui.features = d.features || {};
     ui.serverVersion = d.version || 1;
+    ui.cron = d.cron || null;
   } catch (e) { ui.features = null; throw e; }
   return ui.features;
 }
@@ -88,12 +90,27 @@ export function startClaimPolling() {
 }
 export function stopClaimPolling() { clearTimeout(ui.claimTimer); ui.claimTimer = null; }
 
+// The balance of each account of a connection, for «Patrimonio» (servers from version 3). Optional: a bank that
+// does not give it just leaves the last one known.
+async function fetchBalances(c) {
+  for (const a of c.accounts || []) {
+    const acc = app.state.accounts.find((x) => x.id === a.acctId);
+    if (!acc) continue;
+    try {
+      const b = pickBalance((await api('/balances', { query: { account: a.uid, psu: 1 } })).balances);
+      // A card's booked balance is what you owe, whatever sign the bank uses.
+      if (b) acc.bal = { v: acc.kind === 'tarjeta' && b.v > 0 ? -b.v : b.v, d: localIso(), src: 'banco', at: new Date().toISOString() };
+    } catch (e) { /* keep the last one */ }
+  }
+}
+
 // manual: you pressed «Sincronizar» (every bank is fetched); otherwise only the banks that are due.
 export async function syncAll({ manual = false, only = null } = {}) {
   if (ui.syncing || !app.bank.conns.length) return;
   ui.syncing = true;
   ui.bankMsg = '';
   app.render();
+  if (!ui.features && hasServer()) await loadFeatures().catch(() => {});
   const fresh = new Set();
   let added = 0, merged = 0, maybe = 0, failed = 0;
   try {
@@ -110,6 +127,7 @@ export async function syncAll({ manual = false, only = null } = {}) {
         c.lastSync = new Date().toISOString();
         c.firstDone = true;
         c.error = null;
+        if (ui.features && ui.features.balances) await fetchBalances(c);
       } catch (e) {
         failed++;
         if (e.status === 429 || e.code === 'ASPSP_RATE_LIMIT_EXCEEDED') c.cooldownUntil = new Date(Date.now() + COOLDOWN).toISOString();
@@ -132,8 +150,8 @@ export async function syncAll({ manual = false, only = null } = {}) {
 }
 
 export function maybeAutoSync() {
-  if (!hasServer() || ui.syncing) return;
-  if (app.bank.conns.some((c) => dueForSync(c))) syncAll();
+  if (!hasServer() || ui.syncing) return null;
+  return app.bank.conns.some((c) => dueForSync(c)) ? syncAll() : null;
 }
 
 // The old way back from the bank (?code=… in the app's address), still used when the server has no KV.

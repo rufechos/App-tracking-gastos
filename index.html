@@ -17,10 +17,26 @@
 <meta name="theme-color" content="#f4f6f3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111513" media="(prefers-color-scheme: dark)">
 <link rel="preload" href="fonts/ibm-plex-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<script src="js/lock-boot.js"></script>
 <link rel="stylesheet" href="css/app.css">
 <script type="module" src="js/main.js"></script>
 </head>
 <body>
+<div class="lock" id="lockScreen">
+  <div class="lock-box">
+    <img src="apple-touch-icon.png" alt="" width="72" height="72">
+    <h1>Cuaderno de gastos</h1>
+    <button class="btn primary" type="button" id="lockBtn">Desbloquear con Face ID</button>
+    <p class="small" id="lockMsg" role="status"></p>
+    <details id="lockAlt">
+      <summary>¿No funciona? Usa tu código de recuperación</summary>
+      <form class="form" id="lockCodeForm">
+        <label for="lockCode">Código de recuperación</label><input type="text" id="lockCode" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABCD-EFGH-JKLM">
+        <button class="btn" type="submit">Entrar</button>
+      </form>
+    </details>
+  </div>
+</div>
 <div class="wrap">
   <header class="top">
     <div>
@@ -53,6 +69,11 @@
       <div class="panel-head"><h2>Por revisar</h2><span class="muted small" id="reviewCount"></span></div>
       <ul class="rv-list" id="reviewList"></ul>
       <div class="more" id="reviewMore"></div>
+    </section>
+    <section class="panel" id="budgetPanel" hidden>
+      <div class="panel-head"><h2>Presupuestos</h2><span class="muted small" id="budgetNote"></span></div>
+      <ul class="bud-list" id="budgetList"></ul>
+      <div class="more" id="budgetMore"></div>
     </section>
     <section class="panel">
       <div class="panel-head"><h2>En qué se va este periodo</h2><span class="muted small" id="homeTopNote"></span></div>
@@ -99,15 +120,34 @@
         <table id="incTable"></table>
       </div>
     </section>
+    <section class="panel" id="catEvoPanel" hidden>
+      <div class="panel-head"><h2 id="catEvoTitle"></h2><button class="btn sm" type="button" id="catEvoClose">Cerrar</button></div>
+      <p class="muted small" id="catEvoNote"></p>
+      <div class="chart-box" style="height:220px;margin-top:10px"><canvas id="cCat" aria-label="Gasto de la categoría cada mes"></canvas></div>
+    </section>
     <section class="panel">
       <div class="panel-head"><h2>Reparto de los gastos cada mes</h2><span class="muted small">Porcentaje del gasto mensual por categoría</span></div>
       <div class="legend" id="shareLegend" style="margin-bottom:10px"></div>
       <div class="chart-box"><canvas id="cShare" aria-label="Porcentaje de gasto por categoría cada mes"></canvas></div>
     </section>
+    <section class="panel" id="fixedPanel">
+      <div class="panel-head"><h2>Gastos fijos y suscripciones</h2><span class="muted small" id="fixedNote"></span></div>
+      <ul class="plain-list" id="fixedList"></ul>
+    </section>
+    <section class="panel" id="yearPanel">
+      <div class="panel-head"><h2>Resumen por año</h2></div>
+      <ul class="plain-list" id="yearList"></ul>
+    </section>
   </main>
 
   <!-- Inversiones -->
   <main class="view" id="view-inversiones" data-view="inversiones" hidden>
+    <section class="panel" id="worthPanel">
+      <div class="panel-head"><h2>Patrimonio</h2><span class="muted small" id="worthNote"></span></div>
+      <div class="kpis kpis3" id="worthKpis"></div>
+      <ul class="plain-list" id="worthList" style="margin-top:10px"></ul>
+      <div class="chart-box" id="worthChartBox" style="margin-top:14px;height:220px" hidden><canvas id="cWorth" aria-label="Patrimonio a final de cada mes"></canvas></div>
+    </section>
     <section class="panel" id="invPanel">
       <div class="panel-head">
         <h2>Inversiones</h2>
@@ -115,6 +155,7 @@
       </div>
       <div class="notice" id="invSample" hidden style="margin-bottom:12px"><span><strong>Cartera de ejemplo.</strong> Se borra al añadir o importar tu primera posición.</span></div>
       <div class="kpis" id="invKpis"></div>
+      <p class="muted small note" id="invCostNote"></p>
       <div class="chart-box" id="invChartBox" style="margin-top:16px;height:220px" hidden><canvas id="cInv" aria-label="Evolución del valor de la cartera"></canvas></div>
       <ul class="inv-list" id="invList" style="margin-top:12px"></ul>
       <div class="files" id="invStatus"></div>
@@ -126,11 +167,15 @@
             <input type="hidden" id="invId">
             <label for="invBroker">Bróker</label><input type="text" id="invBroker" list="brokers" required>
             <label for="invName">Nombre</label><input type="text" id="invName" required placeholder="p. ej. Vanguard Global Stock Index">
-            <label for="invIsin">ISIN (para actualizar el precio solo)</label><input type="text" id="invIsin" placeholder="IE00B03HCZ61" autocapitalize="characters" spellcheck="false">
+            <label for="invIsin">ISIN (para actualizar el precio solo)</label><input type="text" id="invIsin" placeholder="IE00B03HD191" autocapitalize="characters" spellcheck="false">
             <div class="row3">
               <div><label for="invQty">Títulos</label><input type="text" id="invQty" inputmode="decimal" required></div>
               <div><label for="invCost">Total invertido (€)</label><input type="text" id="invCost" inputmode="decimal" required></div>
               <div><label for="invPrice">Precio actual (€)</label><input type="text" id="invPrice" inputmode="decimal" placeholder="opcional"></div>
+            </div>
+            <div class="row2">
+              <div><label for="invTer">TER del fondo (% al año)</label><input type="text" id="invTer" inputmode="decimal" placeholder="p. ej. 0,18"></div>
+              <div><label for="invType">Tipo de activo</label><select id="invType"><option value="">Automático</option><option>Renta variable</option><option>Renta fija</option><option>Monetario</option><option>Otros</option></select></div>
             </div>
             <div class="tools" style="margin-top:8px"><button class="btn primary" type="submit" id="invSubmit">Guardar posición</button><button class="btn" type="button" id="invCancel" hidden>Cancelar</button></div>
           </form>
@@ -143,6 +188,15 @@
         </div>
         <datalist id="brokers"><option value="Renta 4"></option><option value="Trade Republic"></option></datalist>
       </details>
+      <details id="invFeesBox">
+        <summary>Comisiones de cada bróker</summary>
+        <p class="muted small" style="margin-top:6px">Lo que cobra la plataforma aparte del fondo: la custodia (un porcentaje del valor al año), una cuota fija o lo que cuesta cada venta. Los de Renta 4 y Trade Republic vienen de sus tarifas publicadas: revísalos con tu contrato.</p>
+        <div id="invFees"></div>
+      </details>
+    </section>
+    <section class="panel" id="invMixPanel" hidden>
+      <div class="panel-head"><h2>Reparto de la cartera</h2></div>
+      <div class="grid2"><div><h3>Por bróker</h3><table id="invByBroker"></table></div><div><h3>Por tipo de activo</h3><table id="invByType"></table></div></div>
     </section>
   </main>
 
@@ -219,10 +273,44 @@
         <button class="btn" type="submit">Añadir categoría</button>
       </form>
       <div class="rules">
-        <h3>Reglas aprendidas</h3>
-        <p class="muted small">Se crean al corregir un movimiento y se aplican a los que ya tienes y a los que lleguen después.</p>
-        <ul class="cat-list" id="rules"></ul>
+        <h3>Reglas</h3>
+        <p class="muted small">Se crean al corregir un movimiento, o aquí. Se aplican a los que ya tienes y a los que lleguen después; si dos encajan, gana la de más abajo.</p>
+        <ul class="cat-list rule-list" id="rules"></ul>
+        <div class="tools" style="margin-top:8px"><button class="btn sm" type="button" id="ruleNew">Nueva regla</button></div>
+        <form class="form rule-form" id="ruleForm" hidden>
+          <h3 id="ruleTitle">Nueva regla</h3>
+          <input type="hidden" id="ruIdx">
+          <label for="ruKw">Si el concepto contiene</label><input type="text" id="ruKw" required placeholder="p. ej. la pepica" autocomplete="off">
+          <label for="ruCat">Ponerlo en</label><select id="ruCat"></select>
+          <div class="row3">
+            <div><label for="ruSign">Solo si es</label><select id="ruSign"><option value="">Gasto o ingreso</option><option value="gasto">Un gasto</option><option value="ingreso">Un ingreso</option></select></div>
+            <div><label for="ruMin">Desde (€)</label><input type="text" id="ruMin" inputmode="decimal" placeholder="Cualquiera"></div>
+            <div><label for="ruMax">Hasta (€)</label><input type="text" id="ruMax" inputmode="decimal" placeholder="Cualquiera"></div>
+          </div>
+          <label for="ruAcct">En la cuenta</label><select id="ruAcct"></select>
+          <div class="rule-preview" id="rulePreview" aria-live="polite"></div>
+          <div class="tools" style="margin-top:8px"><button class="btn primary" type="submit" id="ruSave">Guardar regla</button><button class="btn" type="button" id="ruCancel">Cancelar</button></div>
+        </form>
       </div>
+    </section>
+
+    <section class="panel" id="budgetSetPanel">
+      <div class="panel-head"><h2>Presupuestos</h2><span class="muted small">Un límite al mes para cada categoría de gasto</span></div>
+      <p class="muted small">Déjalo en blanco para no poner límite. La propuesta usa tu media de los últimos 6 meses, redondeada a 10 €.</p>
+      <form id="budgetForm">
+        <div id="budgetFields" class="bud-fields"></div>
+        <div class="tools" style="margin-top:12px"><button class="btn" type="button" id="budgetPropose">Proponer con mis últimos 6 meses</button><button class="btn primary" type="submit">Guardar presupuestos</button></div>
+      </form>
+    </section>
+
+    <section class="panel" id="pushPanel">
+      <div class="panel-head"><h2>Avisos en el iPhone</h2></div>
+      <div id="pushBody"></div>
+    </section>
+
+    <section class="panel" id="lockPanel">
+      <div class="panel-head"><h2>Bloqueo con Face ID</h2></div>
+      <div id="lockBody"></div>
     </section>
 
     <section class="panel" id="dataPanel">
@@ -234,6 +322,10 @@
         <button class="btn" type="button" id="csvBtn">Exportar movimientos a CSV</button>
       </div>
       <div class="files" id="restoreBox"></div>
+      <div class="rules" id="vaultBox">
+        <h3>Copia cifrada en tu servidor</h3>
+        <div id="vaultBody"></div>
+      </div>
       <div class="rules">
         <h3>Borrar datos</h3>
         <div class="tools" id="resetBox" style="margin-top:8px"><button class="btn danger" id="resetBtn" type="button">Borrar todos los datos</button></div>

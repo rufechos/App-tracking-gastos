@@ -87,3 +87,47 @@ export function invChart(history) {
     },
   });
 }
+
+// One category month by month, the month you are looking at in full colour, and its average as a dashed line.
+export function catChart(months, vals, avg, cur) {
+  kill('cat');
+  const el = $('cCat');
+  if (!C() || !el || !el.offsetParent || !months.length) return;
+  const o = base(), color = cssVar('--s2');
+  charts.cat = new (C())(el, {
+    type: 'bar',
+    data: {
+      labels: months.map(mLabel),
+      datasets: [
+        { type: 'bar', label: 'Gasto', data: vals, backgroundColor: months.map((m) => (!cur || m === cur ? color : color + '77')), borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: 'bottom', maxBarThickness: 34 },
+        { type: 'line', label: 'Media', data: months.map(() => avg), borderColor: cssVar('--ink'), borderDash: [5, 4], borderWidth: 1.5, pointRadius: 0, fill: false },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { ...o.tooltip, callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.parsed.y) } } },
+      scales: { x: { grid: { display: false }, border: { color: o.line } }, y: { beginAtZero: true, grid: { color: o.line }, border: { display: false }, ticks: { callback: (v) => fmt0.format(v) } } },
+    },
+  });
+}
+
+// Net worth at the end of each month: money in your accounts and investments, stacked.
+export function worthChart(series) {
+  kill('worth');
+  const el = $('cWorth');
+  if (!C() || !el || !el.offsetParent || series.length < 2) return;
+  const o = base();
+  const ds = (label, data, color) => ({ label, data, backgroundColor: cssVar(color), borderRadius: 3, maxBarThickness: 34, stack: 'w' });
+  charts.worth = new (C())(el, {
+    type: 'bar',
+    data: { labels: series.map((x) => mLabel(x.m)), datasets: [ds('Cuentas', series.map((x) => x.cash), '--s1'), ds('Inversiones', series.map((x) => x.inv || 0), '--s3')] },
+    options: {
+      responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: true, position: 'top', align: 'end', labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 3 } },
+        tooltip: { ...o.tooltip, callbacks: { label: (c) => ' ' + c.dataset.label + ': ' + money(c.parsed.y), footer: (items) => 'Total: ' + money(series[items[0].dataIndex].total) } },
+      },
+      scales: { x: { stacked: true, grid: { display: false }, border: { color: o.line } }, y: { stacked: true, grid: { color: o.line }, border: { display: false }, ticks: { callback: (v) => fmt0.format(v) } } },
+    },
+  });
+}

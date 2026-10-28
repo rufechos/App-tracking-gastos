@@ -14,7 +14,7 @@ export const conn = (o = {}) => ({
   valid_until: iso(NOW + 90 * 864e5), lastSync: iso(NOW - 864e5), firstDone: true, cooldownUntil: null, error: null, ...o,
 });
 
-const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, OPTIONS' };
+const CORS = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Authorization, Content-Type', 'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS' };
 
 // mock(url, request) -> body, or [status, body]. Every call is recorded in `calls`.
 export async function openApp(page, { state, bank, mock, path = 'index.html', now = NOW } = {}) {

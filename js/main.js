@@ -6,13 +6,18 @@ import { loadChart } from './lazy.js';
 import { invalidate } from './ui/summary.js';
 import { renderHome, bindHome } from './ui/home.js';
 import { renderMoves, bindMoves } from './ui/moves.js';
-import { renderAnalysis } from './ui/analysis.js';
+import { renderAnalysis, bindAnalysis } from './ui/analysis.js';
 import { renderInv, bindInv, maybeAutoQuotes } from './ui/invest-ui.js';
 import { renderImport, bindImport } from './ui/import-ui.js';
 import { renderBank, bindBank, bankWake } from './ui/bank-ui.js';
 import { renderAccounts, bindAccounts } from './ui/accounts-ui.js';
 import { renderCats, bindCats } from './ui/cats-ui.js';
 import { renderBackup, bindBackup } from './ui/backup-ui.js';
+import { renderVault, bindVault, autoVault } from './ui/vault-ui.js';
+import { bindLock, renderLockSettings, bindLockSettings } from './ui/lock-ui.js';
+import { renderPush, bindPush, refreshPush } from './ui/push-ui.js';
+import { renderBudgetSettings, bindBudgets } from './ui/budgets-ui.js';
+import { renderWorth, bindWorth } from './ui/worth-ui.js';
 import { renderNotices, bindNotices, setReturnedCode } from './ui/notices.js';
 import { bindReview, reviewCount, resetReviewView } from './ui/review-ui.js';
 import { bindPeriod } from './ui/period-ui.js';
@@ -24,8 +29,8 @@ const VIEWS = {
   inicio: renderHome,
   movimientos: renderMoves,
   analisis: renderAnalysis,
-  inversiones: renderInv,
-  ajustes: () => { renderImport(); renderBank(); renderAccounts(); renderCats(); renderBackup(); },
+  inversiones: () => { renderWorth(); renderInv(); },
+  ajustes: () => { renderImport(); renderBank(); renderAccounts(); renderCats(); renderBudgetSettings(); renderPush(); renderLockSettings(); renderBackup(); renderVault(); },
 };
 
 function renderHeader() {
@@ -48,6 +53,7 @@ function renderAll() {
   for (const t of TABS) $('view-' + t).hidden = t !== ui.tab;
   document.querySelectorAll('.tab').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === ui.tab)));
   VIEWS[ui.tab]();
+  if (ui.scrollTo) { const el = $(ui.scrollTo); ui.scrollTo = null; if (el) el.scrollIntoView(); }
 }
 app.render = renderAll;
 app.onSaveError = () => renderNotices();
@@ -70,6 +76,8 @@ function bindTabs() {
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (ui.reloadOnUpdate) location.reload(); });
+  // A tapped notification: the screen it is about.
+  navigator.serviceWorker.addEventListener('message', (e) => { if (e.data && e.data.type === 'open' && /^#\w+$/.test(e.data.hash || '')) location.hash = e.data.hash; });
   navigator.serviceWorker.register('sw.js').then((reg) => {
     const offer = (w) => { if (w && navigator.serviceWorker.controller) { ui.update = w; renderNotices(); } };
     if (reg.waiting) offer(reg.waiting);
@@ -82,14 +90,16 @@ function registerServiceWorker() {
 }
 
 async function boot() {
+  bindLock();
   if (!load()) loadSample();
   bankLoad();
   if (app.state.sample && app.state.tx.length && !app.state.tx.some((t) => t.date.startsWith(ui.period.m))) {
     ui.period = { kind: 'month', m: app.state.tx.map((t) => t.date.slice(0, 7)).sort().pop() };
   }
-  bindTabs(); bindHome(); bindMoves(); bindInv(); bindImport(); bindBank(); bindAccounts(); bindCats(); bindBackup(); bindNotices(renderAll); bindReview(renderAll);
+  bindTabs(); bindHome(); bindMoves(); bindAnalysis(); bindInv(); bindWorth(); bindImport(); bindBank(); bindAccounts(); bindCats(); bindBudgets(); bindBackup(); bindVault(); bindLockSettings(); bindPush();
+  bindNotices(renderAll); bindReview(renderAll);
   bindPeriod((changed) => renderAll(changed));
-  $('syncBtn').addEventListener('click', () => syncAll({ manual: true }));
+  $('syncBtn').addEventListener('click', () => syncAll({ manual: true }).then(() => refreshPush()));
   try { matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => renderAll()); } catch (e) { /* old Safari */ }
   route();
   const ret = await handleReturn();
@@ -98,11 +108,12 @@ async function boot() {
   loadChart().then(() => renderAll()).catch(() => {});
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { if (window.Chart) renderAll(); });
   await bankWake();
-  maybeAutoSync();
+  const afterSync = () => Promise.resolve(maybeAutoSync()).then(autoVault).then(() => refreshPush());
+  afterSync();
   maybeAutoQuotes();
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible') return;
-    bankWake().then(() => { maybeAutoSync(); maybeAutoQuotes(); });
+    bankWake().then(() => { afterSync(); maybeAutoQuotes(); });
   });
   registerServiceWorker();
   showVersion();

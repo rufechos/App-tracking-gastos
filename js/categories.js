@@ -122,5 +122,7 @@ export function categorize(t, ctx) {
   return { cat: t.amount < 0 ? 'otros_g' : 'otros_i', conf: 'none' };
 }
 
+// The default keywords of a category that name what it was (not weak words, not Bizum or transfers).
+export const strongKw = (id) => kwOf(id).filter((k) => !GENERIC.has(k) && !CHANNEL.has(k));
 export const defaultCatsLite = () => DEFAULT_CATS.map((c) => ({ id: c.id, name: c.name, kind: c.kind }));
 export const kwOf = (id) => { const c = INDEX.find((x) => x.id === id); return c ? c.kw : []; };
