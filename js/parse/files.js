@@ -4,6 +4,7 @@ import { decodeText, parseCSV } from './csv.js';
 import { rowsToTx } from './tabular.js';
 import { linesToTx } from './pdf-statement.js';
 import { rowsToPositions, linesToPositions } from './positions.js';
+import { isTrExport, trRowsToTx, trPositions } from './traderepublic.js';
 
 const extOf = (f) => (f.name.split('.').pop() || '').toLowerCase();
 const isPdf = (f) => extOf(f) === 'pdf' || f.type === 'application/pdf';
@@ -44,7 +45,7 @@ export async function pdfLines(buf) {
 export async function readStatement(file) {
   const buf = await file.arrayBuffer();
   if (isPdf(file)) return linesToTx(await pdfLines(buf));
-  if (isText(file)) return rowsToTx(parseCSV(decodeText(buf)));
+  if (isText(file)) { const rows = parseCSV(decodeText(buf)); return isTrExport(rows) ? trRowsToTx(rows) : rowsToTx(rows); }
   const sheets = await readSheets(buf);
   let best = null, lastErr = null;
   for (const rows of sheets) {
@@ -58,7 +59,7 @@ export async function readStatement(file) {
 export async function readPositions(file) {
   const buf = await file.arrayBuffer();
   if (isPdf(file)) return linesToPositions(await pdfLines(buf));
-  if (isText(file)) return rowsToPositions(parseCSV(decodeText(buf)));
+  if (isText(file)) { const rows = parseCSV(decodeText(buf)); return isTrExport(rows) ? trPositions(rows) : rowsToPositions(rows); }
   let err = null;
   for (const rows of await readSheets(buf)) {
     try { return rowsToPositions(rows); } catch (e) { err = e; }

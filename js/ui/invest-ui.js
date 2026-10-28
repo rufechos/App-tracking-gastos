@@ -200,7 +200,7 @@ export function bindInv() {
       app.state.inv = leaveSampleInv(app.state.inv);
       importPositionRows(app.state.inv, rows, broker);
       save();
-      ui.invMsg = `<span class="ok">${plural(rows.length, 'posición importada', 'posiciones importadas')} de ${esc(broker)}.</span>` + (rows.some((r) => r.costGuess) ? '<span class="muted">El informe no trae lo invertido en alguna posición: revísalo con «Editar».</span>' : '');
+      ui.invMsg = `<span class="ok">${plural(rows.length, 'posición importada', 'posiciones importadas')} de ${esc(broker)}.</span>` + (rows.some((r) => r.costGuess) ? '<span class="muted">El informe no trae lo invertido en alguna posición: revísalo con «Editar».</span>' : '') + (rows.note ? `<span class="muted">${esc(rows.note)}</span>` : '');
       renderInv();
       await updateQuotes(ui.invMsg + '</div><div class="file-row">');
     } catch (err) { ui.invMsg = `<span class="err">${esc(err.message || String(err))}</span>`; renderInv(); }

@@ -35,7 +35,7 @@ export function importPositionRows(inv, rows, broker, today = localIso()) {
   for (const r of rows) {
     const prev = old.find((o) => (r.isin && o.isin === r.isin) || norm(o.name) === norm(r.name));
     const cost = r.costGuess && prev ? prev.cost : r.cost;
-    inv.positions.push({ ...(prev || {}), id: prev ? prev.id : uid(), broker, name: r.name, isin: r.isin, qty: r.qty, cost, price: r.price, priceDate: r.price != null ? today : null });
+    inv.positions.push({ ...(prev || {}), id: prev ? prev.id : uid(), broker, name: r.name, isin: r.isin, qty: r.qty, cost, price: r.price, priceDate: r.price != null ? r.priceDate || today : null });
   }
   snapshot(inv, today);
 }
