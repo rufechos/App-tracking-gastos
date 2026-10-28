@@ -17,6 +17,7 @@ export const DEFAULT_CATS = [
   { id: 'viajes', name: 'Viajes', kind: 'gasto', kw: ['booking', 'booking com', 'airbnb', 'ryanair', 'vueling', 'iberia', 'iberia express', 'air europa', 'easyjet', 'volotea', 'binter', 'air nostrum', 'wizz air', 'transavia', 'lufthansa', 'klm', 'air france', 'british airways', 'hotel', 'hoteles', 'nh hoteles', 'nh hotel', 'melia', 'barcelo', 'iberostar', 'riu', 'parador', 'paradores', 'hostal', 'hostel', 'expedia', 'edreams', 'lastminute', 'trivago', 'rumbo', 'logitravel', 'aena', 'aeropuerto', 'europcar', 'hertz', 'sixt', 'avis', 'goldcar', 'centauro', 'enterprise rent'] },
   { id: 'seguros', name: 'Seguros', kind: 'gasto', kw: ['mapfre', 'axa', 'allianz', 'mutua', 'mutua madrilena', 'linea directa', 'generali', 'zurich', 'reale', 'santalucia', 'ocaso', 'verti', 'caser', 'catalana occidente', 'pelayo', 'mutua levante', 'occident', 'helvetia', 'liberty', 'aseguradora', 'seguro', 'seguros'] },
   { id: 'educacion', name: 'Educación', kind: 'gasto', kw: ['colegio', 'escuela', 'universidad', 'academia', 'udemy', 'coursera', 'matricula', 'libreria', 'guarderia', 'casa del libro', 'escuela infantil', 'autoescuela'] },
+  { id: 'donaciones', name: 'Donaciones', kind: 'gasto', kw: ['donativo', 'donativos', 'donacion', 'donaciones', 'donacion ong', 'ong', 'cuota socio', 'cuota de socio', 'cuota socia', 'apadrinamiento', 'apadrina', 'caritas', 'cruz roja', 'unicef', 'medicos sin fronteras', 'msf', 'save the children', 'oxfam', 'oxfam intermon', 'intermon', 'acnur', 'acnur comite', 'greenpeace', 'wwf', 'amnistia internacional', 'manos unidas', 'aldeas infantiles', 'ayuda en accion', 'accion contra el hambre', 'plan international', 'world vision', 'educo', 'entreculturas', 'open arms', 'proactiva open arms', 'banco de alimentos', 'fesbal', 'fundacion vicente ferrer', 'vicente ferrer', 'fundacion josep carreras', 'josep carreras', 'aecc', 'contra el cancer', 'mensajeros de la paz', 'proyecto hombre', 'anesvad', 'farmaceuticos mundi', 'farmamundi', 'medicus mundi', 'acnur espana', 'ayuda a la iglesia necesitada', 'unrwa', 'sos racismo', 'teaming', 'gofundme', 'migranodearena', 'mi grano de arena', 'hazloposible', 'limosna', 'ofrenda', 'parroquia', 'fundacion'] },
   { id: 'efectivo', name: 'Retiradas de efectivo', kind: 'gasto', kw: ['cajero', 'retirada', 'reintegro', 'disposicion efectivo', 'disp efectivo', 'atm', 'retirada efectivo', 'bargeldauszahlung', 'cash withdrawal'] },
   { id: 'impuestos', name: 'Impuestos y comisiones', kind: 'gasto', kw: ['comision', 'comisiones', 'aeat', 'hacienda', 'agencia tributaria', 'impuesto', 'seguridad social', 'tgss', 'dgt', 'multa', 'cuota mantenimiento', 'intereses deudores', 'tasa', 'ayuntamiento'] },
   { id: 'tarjeta', name: 'Pago de la tarjeta de crédito', kind: 'gasto', kw: ['liquidacion tarjeta', 'pago tarjeta credito', 'cargo tarjeta credito', 'recibo tarjeta', 'liquidacion de tarjeta', 'tarjeta credito', 'bankinter consumer finance', 'bankintercard', 'tarjeta air europa', 'wizink', 'cetelem', 'cofidis', 'oney'] },
@@ -40,7 +41,7 @@ export const OTHER = { gasto: 'otros_g', ingreso: 'otros_i' };
 const GENERIC = new Set(['super', 'dia', 'mercado', 'horno', 'rest', 'energia', 'electricidad', 'agua', 'e s', 'metro', 'parque', 'action',
   'simply', 'charter', 'lupa', 'hiber', 'tasa', 'ayuntamiento', 'ayuda', 'abono', 'interes', 'seguro', 'seguros', 'google', 'mutua', 'reale',
   'avia', 'saba', 'lime', 'riu', 'avis', 'pans', 'udon', 'tapas', 'pizza', 'burger', 'wok', 'transf', 'trf', 'transferencia', 'broker', 'r4',
-  'tarjeta credito', 'alimentacion', 'clinica', 'medico', 'liberty', 'occident']);
+  'tarjeta credito', 'alimentacion', 'clinica', 'medico', 'liberty', 'occident', 'fundacion', 'parroquia']);
 // How the money moved (Bizum, transfer): beaten by what it was for ("transferencia recibida nomina" is a salary).
 const CHANNEL = new Set(['bizum', 'bizum enviado', 'bizum recibido', 'transferencia emitida', 'transferencia enviada', 'transf emitida',
   'transferencia recibida', 'transf recibida', 'orden de transferencia']);
@@ -69,7 +70,7 @@ const MCC_RANGES = [
   [5811, 5814, 'restaurantes'], [5815, 5818, 'suscripciones'], [5912, 5912, 'salud'], [5921, 5921, 'supermercado'], [5931, 5999, 'compras'],
   [5960, 5960, 'seguros'], [5968, 5968, 'suscripciones'], [5975, 5976, 'salud'], [6010, 6011, 'efectivo'], [6300, 6399, 'seguros'],
   [7011, 7011, 'viajes'], [7512, 7519, 'viajes'], [7523, 7523, 'transporte'], [7531, 7549, 'transporte'], [7829, 7833, 'ocio'],
-  [7911, 7999, 'ocio'], [8011, 8099, 'salud'], [8211, 8299, 'educacion'], [9211, 9399, 'impuestos'], [742, 742, 'salud'],
+  [7911, 7999, 'ocio'], [8011, 8099, 'salud'], [8211, 8299, 'educacion'], [9211, 9399, 'impuestos'], [742, 742, 'salud'], [8398, 8398, 'donaciones'], [8661, 8661, 'donaciones'],
 ];
 export function mccCategory(mcc) {
   const n = parseInt(mcc, 10);

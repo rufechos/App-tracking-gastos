@@ -29,6 +29,9 @@ const CASES = [
   ['Pago en RYANAIR', -148.6, 'viajes'], ['Pago en BOOKING.COM', -312.4, 'viajes'], ['Pago en NH HOTELES', -120.0, 'viajes'],
   ['Pago en AIRBNB', -230.0, 'viajes'], ['Recibo MAPFRE SEGUROS HOGAR', -24.6, 'seguros'],
   ['Recibo LINEA DIRECTA ASEGURADORA', -31.0, 'seguros'], ['Pago en CASA DEL LIBRO', -21.0, 'educacion'],
+  ['Bizum enviado DONATIVO PARROQUIA', -20.0, 'donaciones'], ['Recibo MEDICOS SIN FRONTERAS ESPANA', -15.0, 'donaciones'],
+  ['Transferencia emitida CARITAS DIOCESANA', -50.0, 'donaciones'], ['Recibo CUOTA SOCIO UNICEF COMITE ESPANOL', -12.0, 'donaciones'],
+  ['Recibo CRUZ ROJA ESPANOLA', -10.0, 'donaciones'], ['Pago en TEAMING.NET', -1.0, 'donaciones'],
   ['Reintegro cajero VALENCIA', -60.0, 'efectivo'], ['Comision mantenimiento cuenta', -3.0, 'impuestos'],
   ['Recibo AYUNTAMIENTO VALENCIA IBI', -310.0, 'vivienda'], ['Recibo ALQUILER OCTUBRE', -760.0, 'vivienda'],
   ['Bizum enviado a PABLO R. regalo', -15.0, 'transf_env'], ['Transferencia emitida PAGO DIA DEL PADRE', -40.0, 'transf_env'],
@@ -65,6 +68,7 @@ test('el código de comercio (MCC) decide cuando no hay palabra clave', () => {
   assert.equal(mccCategory('5541'), 'transporte');
   assert.equal(mccCategory('3015'), 'viajes');
   assert.equal(mccCategory('abc'), null);
+  assert.equal(mccCategory('8398'), 'donaciones');
 });
 
 test('las reglas ganan y respetan el signo, el importe y la cuenta', () => {
