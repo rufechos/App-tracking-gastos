@@ -161,6 +161,41 @@ test('bloqueo con Face ID: pide la llave al abrir, y el código de recuperación
   expect(errors).toEqual([]);
 });
 
+test('bloqueo con Face ID: se pide solo en cuanto la app está delante, tocar la pantalla también sirve, y el tiempo fuera se elige', async ({ page }) => {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('WebAuthn.enable');
+  await cdp.send('WebAuthn.addVirtualAuthenticator', { options: {
+    protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
+  const url = test.info().project.use.baseURL.replace('127.0.0.1', 'localhost');
+  // Just opened from the home screen, Safari does not have the app in front yet: hasFocus() is false until it is.
+  await page.addInitScript(() => { const real = document.hasFocus.bind(document); document.hasFocus = () => !localStorage.getItem('test-nofocus') && real(); });
+  const { errors } = await openApp(page, { path: url + 'index.html#ajustes', state: state0({ tx: tx3() }) });
+  const locked = () => page.evaluate(() => document.documentElement.classList.contains('locked'));
+  await page.click('#lockOn');
+  await page.click('#lockCodeDone');
+  await expect(page.locator('#lockBody')).toContainText('después de un minuto');
+  await page.selectOption('#lockRelock', '15');
+  await expect(page.locator('#lockBody')).toContainText('después de 15 minutos');
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('cuaderno-gastos-bloqueo')).relock)).toBe(15 * 60e3);
+
+  await page.evaluate(() => localStorage.setItem('test-nofocus', '1'));
+  await page.reload();
+  await page.waitForTimeout(400);
+  expect(await locked()).toBe(true); // not asked while the app is not in front
+  await expect(page.locator('#lockMsg')).toHaveText('Toca la pantalla para usar Face ID.');
+  await page.evaluate(() => { localStorage.removeItem('test-nofocus'); window.dispatchEvent(new Event('focus')); });
+  await expect.poll(locked).toBe(false); // in front: Face ID by itself, no tap
+
+  await page.evaluate(() => localStorage.setItem('test-nofocus', '1'));
+  await page.reload();
+  await page.waitForTimeout(400);
+  expect(await locked()).toBe(true);
+  await page.click('.lock-box h1'); // anywhere on the screen
+  await expect.poll(locked).toBe(false);
+  await page.evaluate(() => localStorage.removeItem('test-nofocus'));
+  expect(errors).toEqual([]);
+});
+
 test.describe('avisos en el iPhone', () => {
   test.use({ serviceWorkers: 'allow' });
   test('activarlos manda al servidor la suscripción y lo justo; cambiar las preferencias lo actualiza', async ({ page }) => {
