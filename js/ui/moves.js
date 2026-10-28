@@ -6,7 +6,8 @@ import { catOptions, catName } from './cats.js';
 import { renderPeriod } from './period-ui.js';
 import { data } from './summary.js';
 import { RV_LABEL } from '../review.js';
-import { norm, signed, dShort, plural } from '../util.js';
+import { norm, signed, dShort, plural, addMonths, mLabel, mLong } from '../util.js';
+import { ownMonth, txMonth } from '../aggregate.js';
 import { suggestKw } from '../categories.js';
 import { applyRule, countMatches, ruleSign } from './learn.js';
 
@@ -16,6 +17,15 @@ function filtered() {
   return d.list.filter((t) => (!ui.fCat || t.cat === ui.fCat) && (!ui.fAcct || (ui.fAcct === '-' ? !t.acct : t.acct === ui.fAcct))
       && (!q || norm(t.concept).includes(q) || (qn && /\d/.test(qn) && Math.abs(t.amount).toFixed(2).replace('.', ',').includes(qn.replace('.', ','))))
   ).sort((a, b) => b.date.localeCompare(a.date) || a.amount - b.amount);
+}
+
+// An income can be counted in the month before or after its date (the salary paid at the end of the month).
+function monthTag(t) {
+  if (t.amount <= 0 && !t.mm) return '';
+  const own = t.date.slice(0, 7), m = txMonth(t);
+  const opts = [addMonths(own, -1), own, addMonths(own, 1)].map((x) => `<option value="${x}"${x === m ? ' selected' : ''}>${x === own ? 'En su mes (' + mLabel(x) + ')' : 'Cuenta en ' + mLabel(x)}</option>`).join('');
+  // An invisible 16 px select over the tag: tapping it opens the iPhone picker without zooming the page.
+  return `<label class="tag mm${m !== own ? ' on' : ''}"><span>${m !== own ? '→ ' + mLabel(m) : 'Mes'}</span><select data-mm="${t.id}" aria-label="Mes en que cuenta ${esc(t.concept)}">${opts}</select></label>`;
 }
 
 export function renderMoves() {
@@ -33,7 +43,7 @@ export function renderMoves() {
   const p = ui.pending;
   $('mvList').innerHTML = rows.length ? rows.slice(0, ui.mvLimit).map((t) => {
     const meta = esc([dShort(t.date), acct.get(t.acct) || t.src].filter(Boolean).join(' · '));
-    const flags = (t.rv ? `<span class="tag rv" title="${esc(RV_LABEL[t.rv] || '')}">Por revisar</span>` : '') + (t.pair ? '<span class="tag" title="Traspaso entre tus cuentas">↔</span>' : '');
+    const flags = monthTag(t) + (t.rv ? `<span class="tag rv" title="${esc(RV_LABEL[t.rv] || '')}">Por revisar</span>` : '') + (t.pair ? '<span class="tag" title="Traspaso entre tus cuentas">↔</span>' : '');
     let learn = '';
     if (p && p.id === t.id) {
       learn = p.auto
@@ -53,6 +63,16 @@ export function bindMoves() {
   $('moreBox').addEventListener('click', (e) => { if (e.target.id === 'moreBtn') { ui.mvLimit += 200; renderMoves(); } });
   const list = $('mvList');
   list.addEventListener('change', (e) => {
+    const mm = e.target.closest('select[data-mm]');
+    if (mm) {
+      const t = app.state.tx.find((x) => x.id === mm.dataset.mm);
+      if (!t) return;
+      if (mm.value === ownMonth(t)) delete t.mm; else t.mm = mm.value;
+      save();
+      app.render();
+      toast(t.mm || ownMonth(t) !== t.date.slice(0, 7) ? 'Cuenta como ingreso de ' + mLong(txMonth(t)) + '.' : 'Cuenta en su mes.');
+      return;
+    }
     const sel = e.target.closest('select[data-tx]');
     if (!sel) return;
     const t = app.state.tx.find((x) => x.id === sel.dataset.tx);

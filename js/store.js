@@ -6,13 +6,14 @@ import { migrateV1 } from './migrate.js';
 import { classify } from './classify.js';
 import { sampleTx, sampleInv } from './sample.js';
 import { uid } from './util.js';
+import { DEFAULT_PAYDAY, usePayday } from './aggregate.js';
 
 export const LS = 'cuaderno-gastos-v1';
 export const LSB = 'cuaderno-gastos-banco';
 export const VERSION = 2;
 
 export const emptyInv = () => ({ positions: [], history: [], lastQuote: null });
-export const emptyState = () => ({ v: VERSION, tx: [], cats: defaultCatsLite(), rules: [], accounts: [], files: [], sample: false, inv: emptyInv(), settings: { owners: [], lastBackup: null } });
+export const emptyState = () => ({ v: VERSION, tx: [], cats: defaultCatsLite(), rules: [], accounts: [], files: [], sample: false, inv: emptyInv(), settings: { owners: [], lastBackup: null, payday: { ...DEFAULT_PAYDAY } } });
 export const emptyBank = () => ({ server: '', token: '', conns: [], pendingAuth: null });
 
 export const app = {
@@ -38,6 +39,8 @@ function safeIds(list, prefix, refs) {
 export function normalizeState(s) {
   const st = Object.assign(emptyState(), s);
   st.settings = Object.assign({ owners: [], lastBackup: null }, s.settings || {});
+  st.settings.payday = Object.assign({}, DEFAULT_PAYDAY, st.settings.payday || {});
+  for (const t of st.tx) if (t.mm != null && !/^\d{4}-\d{2}$/.test(t.mm)) delete t.mm;
   st.inv = Object.assign(emptyInv(), s.inv || {});
   for (const d of DEFAULT_CATS) if (!st.cats.some((c) => c.id === d.id)) st.cats.push({ id: d.id, name: d.name, kind: d.kind });
   st.accounts = st.accounts || [];
@@ -51,6 +54,8 @@ export function normalizeState(s) {
   for (const a of st.accounts) if (!ACCOUNT_KINDS[a.kind]) a.kind = 'banco';
   return st;
 }
+
+usePayday(() => app.state.settings.payday || DEFAULT_PAYDAY);
 
 export function upgrade(raw) {
   let s = raw;
